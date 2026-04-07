@@ -130,6 +130,10 @@ namespace web {
 class WebServer;
 }
 
+namespace sap{
+class SAplace;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -179,6 +183,7 @@ class OpenRoad
   dst::Distributed* getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
   dft::Dft* getDft() { return dft_; }
+  sap::SAplace* getSAplace() { return saplace_; }
   est::EstimateParasitics* getEstimateParasitics()
   {
     return estimate_parasitics_;
@@ -289,6 +294,7 @@ class OpenRoad
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   web::WebServer* web_server_ = nullptr;
   utl::CallBackHandler* callback_handler_ = nullptr;
+  sap::SAplace* saplace_ = nullptr;
 
   int threads_ = 1;
 

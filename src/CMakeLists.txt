@@ -286,6 +286,7 @@ add_subdirectory(dft)
 add_subdirectory(mpl)
 add_subdirectory(par)
 add_subdirectory(est)
+add_subdirectory(sap)
 add_subdirectory(web)
 
 ################################################################
@@ -355,6 +356,7 @@ target_link_libraries(openroad
   pdn
   dft
   mpl
+  sap
   par
   est
   web

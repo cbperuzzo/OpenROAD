@@ -51,6 +51,7 @@
 #include "gui/MakeGui.h"
 #include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
+#include "sap/SAplace.h
 #include "mpl/rtl_mp.h"
 #include "odb/3dblox.h"
 #include "odb/MakeOdb.h"
@@ -131,6 +132,7 @@ OpenRoad::~OpenRoad()
   delete tritonCts_;
   delete tapcell_;
   delete macro_placer_;
+  delete saplace_
   delete example_;
   delete extractor_;
   delete detailed_router_;
@@ -237,6 +239,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tapcell_ = new tap::Tapcell(db_, logger_);
   partitionMgr_ = new par::PartitionMgr(db_, getDbNetwork(), sta_, logger_);
   macro_placer_ = new mpl::MacroPlacer(db_, sta_, logger_, partitionMgr_);
+  saplace_ = new sap::SAplace(db_, logger_);
   extractor_ = new rcx::Ext(db_, logger_, getVersion());
   distributer_ = new dst::Distributed(logger_);
   detailed_router_ = new drt::TritonRoute(

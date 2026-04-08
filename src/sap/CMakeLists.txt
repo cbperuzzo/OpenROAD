@@ -21,6 +21,7 @@ target_sources(sap
   PRIVATE
     src/MakeSAplace.cpp
     src/SAplace.cpp
+    src/net.cpp
 )
 
 messages(TARGET sap)

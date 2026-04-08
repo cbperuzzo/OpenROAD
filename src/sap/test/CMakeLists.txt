@@ -1,5 +1,5 @@
 or_integration_tests(
-  "epl"
+  "sap"
   TESTS
     test-sap-01
 )

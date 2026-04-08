@@ -17,7 +17,7 @@
             void simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha);
     
         private:
-            int Hpwl();
+            int hpwl();
             void perturb();
             float calcCost();
             void pack();

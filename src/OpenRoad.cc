@@ -51,7 +51,7 @@
 #include "gui/MakeGui.h"
 #include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
-#include "sap/SAplace.h
+#include "sap/SAplace.h"
 #include "mpl/rtl_mp.h"
 #include "odb/3dblox.h"
 #include "odb/MakeOdb.h"
@@ -132,7 +132,7 @@ OpenRoad::~OpenRoad()
   delete tritonCts_;
   delete tapcell_;
   delete macro_placer_;
-  delete saplace_
+  delete saplace_;
   delete example_;
   delete extractor_;
   delete detailed_router_;

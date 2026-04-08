@@ -196,10 +196,10 @@ void SAplace::restoreState(){
 }
 
 float SAplace::calcCost(){  
-  return (float) Hpwl();
+  return (float) hpwl();
 }
 
-int SAplace::Hpwl(){
+int SAplace::hpwl(){
   
   int acumulated_hpwl;
 
@@ -264,7 +264,7 @@ void SAplace::generateRandomIndices(int& index1, int& index2,int& index3)
   index3 = rand() % pos_seq_.size();
 
   while (index3 == index1 || index3 == index2){
-    index3 == rand() % pos_seq_.size();
+    index3 = rand() % pos_seq_.size();
   }
 
 }

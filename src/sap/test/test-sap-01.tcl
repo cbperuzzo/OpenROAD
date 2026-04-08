@@ -10,7 +10,7 @@ read_lef "./testcases/orientation_improve1.lef"
 
 read_def "./testcases/boundary_push1.def"
 
-set_thread_count 0
+set_thread_count 1
 
 saplace_simulated_annealing \
     -iterations_per_T 200 \

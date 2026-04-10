@@ -52,6 +52,7 @@
 #include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
 #include "sap/SAplace.h"
+#include "sap/MakeSAplace.h"
 #include "mpl/rtl_mp.h"
 #include "odb/3dblox.h"
 #include "odb/MakeOdb.h"
@@ -301,6 +302,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft::initDft(tcl_interp);
   est::initTcl(tcl_interp);
   web::initWeb(tcl_interp);
+  sap::initSAplace(tcl_interp);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

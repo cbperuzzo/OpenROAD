@@ -32,6 +32,11 @@ SAplace::~SAplace(){
 void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha)
 {
 
+  log_->report("Start simulated annealing with {} threads, {} iterations per T, initial T = {}, alpha = {}", n_threads, iterations_per_T, initial_T, alpha);
+
+  macros_.clear();
+  nets_.clear();
+
   for(auto inst : db_->getChip()->getBlock()->getInsts()){
     if (inst->isBlock())
       macros_.push_back(inst);
@@ -105,6 +110,8 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   pack();
 
+  log_->report("Finished simulated annealing");
+
 }
 
 void SAplace::pack(){
@@ -122,12 +129,16 @@ void SAplace::pack(){
 
     odb::dbInst* macro = macros_[macro_id];
     odb::Rect rect = macro->getBBox()->getBox();
+    int x = rect.xMin();
+    int y = rect.yMin();
 
     if (!macro->isFixed()) {
-      rect.set_xlo(accumulated_length[neg_seq_pos]);
+      x = accumulated_length[neg_seq_pos];
+      macro->setLocation(x, y);
+      macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     }
 
-    const int current_length = rect.xMin() + rect.dx();
+    const int current_length = x + rect.dx();
   
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_length > accumulated_length[j]) {
@@ -161,12 +172,16 @@ void SAplace::pack(){
 
     odb::dbInst* macro = macros_[macro_id];
     odb::Rect rect = macro->getBBox()->getBox();
+    int x = rect.xMin();
+    int y = rect.yMin();
 
     if (!macro->isFixed()) {
-      rect.set_ylo(neg_seq_pos);
+      y = accumulated_length[neg_seq_pos];
+      macro->setLocation(x, y);
+      macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     }
 
-    const int current_height = rect.yMin() + rect.dy();
+    const int current_height = y + rect.dy();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_height > accumulated_length[j]) {

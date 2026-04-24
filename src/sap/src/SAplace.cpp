@@ -211,12 +211,32 @@ void SAplace::restoreState(){
 }
 
 float SAplace::calcCost(){  
-  return (float) hpwl();
+  return (float) hpwl() +  penalties();
 }
+
+float SAplace::penalties(){
+  float penalty = 0.0;
+  
+  // Note: It's safer to use getBlock()->getBBox() instead of getChip()->getBBox()
+  int max_h = db_->getChip()->getBlock()->getBBox()->getDY();
+  int max_w = db_->getChip()->getBlock()->getBBox()->getDX();
+
+  if(height_ >= max_h){
+    // Penalize proportionally to how much it exceeded, multiplied by a large weight
+    penalty += (height_ - max_h) * 10000.0; 
+  }
+  
+  if(width_ >= max_w){
+    penalty += (width_ - max_w) * 10000.0;
+  }
+
+  return penalty;
+}
+
 
 int SAplace::hpwl(){
   
-  int acumulated_hpwl;
+  int acumulated_hpwl = 0;
 
   for (auto net: nets_)
     acumulated_hpwl += net.getHpwl();

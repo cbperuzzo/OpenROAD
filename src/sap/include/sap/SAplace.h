@@ -20,6 +20,7 @@
             int hpwl();
             void perturb();
             float calcCost();
+            float penalties();
             void pack();
             void saveState();
             void restoreState();

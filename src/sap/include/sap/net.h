@@ -1,6 +1,7 @@
 #pragma once
 
 #include "odb/db.h"
+#include "Macro.h"
 
 namespace sap
 {
@@ -15,8 +16,13 @@ public:
     void update();
     int getHpwl();
 
+    bool operator==( Net& other) const;
+
+    void addMacro(Macro& macro);
+
 private:
 
+    std::vector<Macro*> macros_;
     odb::dbNet* net_;
     int lx_;
     int ux_;

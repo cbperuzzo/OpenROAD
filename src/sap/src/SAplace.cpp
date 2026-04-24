@@ -1,9 +1,8 @@
 #include "sap/SAplace.h"
 
-#include <random>
-#include <algorithm>
 #include "sta/StaMain.hh"
 #include "odb/db.h"
+#include <map>
 
 namespace sap{
 
@@ -39,15 +38,26 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   for(auto inst : db_->getChip()->getBlock()->getInsts()){
     if (inst->isBlock())
-      macros_.push_back(inst);
+      macros_.push_back(Macro(inst));
   }
-
-  for (auto net : db_->getChip()->getBlock()->getNets()){
-    nets_.push_back(Net(net));
-  }
-  
 
   int n_macros = macros_.size();
+
+
+  std::map<odb::dbNet*,Net> net_map;
+  for(auto macro : macros_ ){
+    for(auto dbnet : macro.listNets()){
+        if (net_map.haskey(dbnet)){
+          net_map.at(dbnet).addMacro(&macro)
+        }
+        else{
+
+        }
+        
+    }
+  }
+
+
 
   log_->report("total macros: {}",n_macros);
   
@@ -127,8 +137,8 @@ void SAplace::pack(){
   for (int macro_id : pos_seq_) {
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
-    odb::dbInst* macro = macros_[macro_id];
-    odb::Rect rect = macro->getBBox()->getBox();
+    Macro* macro = &macros_[macro_id];
+    odb::Rect rect = macro->getBBox();
     int x = rect.xMin();
     int y = rect.yMin();
 
@@ -170,8 +180,8 @@ void SAplace::pack(){
     const int macro_id = reversed_pos_seq[i];
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
-    odb::dbInst* macro = macros_[macro_id];
-    odb::Rect rect = macro->getBBox()->getBox();
+    Macro* macro = &macros_[macro_id];
+    odb::Rect rect = macro->getBBox();
     int x = rect.xMin();
     int y = rect.yMin();
 
@@ -217,17 +227,15 @@ float SAplace::calcCost(){
 float SAplace::penalties(){
   float penalty = 0.0;
   
-  // Note: It's safer to use getBlock()->getBBox() instead of getChip()->getBBox()
   int max_h = db_->getChip()->getBlock()->getBBox()->getDY();
   int max_w = db_->getChip()->getBlock()->getBBox()->getDX();
 
   if(height_ >= max_h){
-    // Penalize proportionally to how much it exceeded, multiplied by a large weight
-    penalty += (height_ - max_h) * 10000.0; 
+    penalty += 1e+7; 
   }
   
   if(width_ >= max_w){
-    penalty += (width_ - max_w) * 10000.0;
+    penalty += 1e+7;
   }
 
   return penalty;

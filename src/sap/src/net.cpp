@@ -28,5 +28,13 @@ void Net::update(){
 int Net::getHpwl(){
     return (ux_ - lx_) + (uy_ - ly_);
 }
+
+bool Net::operator==( Net& other) const{
+    return (net_ == other.net_);
+}
+
+void Net::addMacro(Macro& macro){
+    macros_.push_back(&macro);
+}
     
 }

@@ -16,13 +16,13 @@ void Net::update(){
     ly_ = INT_MAX;
     ux_ = INT_MIN;
     uy_ = INT_MIN;
-    for (odb::dbITerm* iTerm : net_->getITerms()) {
-        odb::dbBox* box = iTerm->getInst()->getBBox();
-        lx_ = std::min(box->xMin(), lx_);
-        ly_ = std::min(box->yMin(), ly_);
-        ux_ = std::max(box->xMax(), ux_);
-        uy_ = std::max(box->yMax(), uy_);
+    for (auto macro : macros_) {
+        lx_ = std::min(macro.cx(), lx_);
+        ly_ = std::min(macro.cy(), ly_);
+        ux_ = std::max(macro.cx(), ux_);
+        uy_ = std::max(macro.cy(), uy_);
     }
+
 }
 
 int Net::getHpwl(){
@@ -34,7 +34,15 @@ bool Net::operator==( Net& other) const{
 }
 
 void Net::addMacro(Macro& macro){
-    macros_.push_back(&macro);
+    macros_.push_back(macro);
+}
+
+odb::dbNet* Net::getDbNet(){
+    return net_;
+}
+
+std::vector<Macro> Net::getMacros(){
+    return macros_;
 }
     
 }

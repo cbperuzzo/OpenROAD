@@ -43,30 +43,55 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   int n_macros = macros_.size();
 
-
   std::map<odb::dbNet*,Net> net_map;
   for(auto macro : macros_ ){
-    for(auto dbnet : macro.listNets()){
-        if (net_map.haskey(dbnet)){
-          net_map.at(dbnet).addMacro(&macro)
+    for(auto dbnet : macro.listDbNets()){
+        if (net_map.find(dbnet) != net_map.end()){
+          net_map.at(dbnet).addMacro(macro);
         }
         else{
-
+          Net new_net(dbnet);
+          new_net.addMacro(macro);
+          net_map.insert({dbnet,new_net});
         }
-        
     }
   }
 
+  // debuging start -------------------------------------
+  //
+  //
+  // ----------------------------------------------------
+  /*
 
+  log_->report("macros: ");
 
-  log_->report("total macros: {}",n_macros);
+  for (auto macro : macros_){
+
+    log_->report("  macro: {}",(void*)(macro.getInst()) );
+  }
+
+  log_->report("nets: ");
+
+  for (auto net : net_map){
+    nets_.push_back(net.second);
+    log_->report("  start net {} :",(void*)(net.second.getDbNet()));
+    
+    for (auto macro : net.second.getMacros()){
+      log_->report("    macro: {}",(void*)(macro.getInst()) );
+    }
+
+    log_->report("  end net;");
+  }
+
+  return;
+
+  */
+  // ----------------------------------------------------
+  //
+  //
+  // debuging end ---------------------------------------
   
-  pos_seq_.resize(n_macros);
-  neg_seq_.resize(n_macros);
-  pos_seq_backup_.resize(n_macros);
-  neg_seq_backup_.resize(n_macros);
-
-  // random place
+  // random placement
   std::iota(pos_seq_.begin(),pos_seq_.end(),0);
   std::iota(neg_seq_.begin(),neg_seq_.end(),0);
 
@@ -137,18 +162,15 @@ void SAplace::pack(){
   for (int macro_id : pos_seq_) {
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
-    Macro* macro = &macros_[macro_id];
-    odb::Rect rect = macro->getBBox();
-    int x = rect.xMin();
-    int y = rect.yMin();
+    Macro macro = macros_[macro_id];
+    int x = macro.xMin();
 
-    if (!macro->isFixed()) {
+    if (!macro.isFixed()) {
       x = accumulated_length[neg_seq_pos];
-      macro->setLocation(x, y);
-      macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      macro.xMin(x);
     }
 
-    const int current_length = x + rect.dx();
+    const int current_length = x + macro.dx();
   
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_length > accumulated_length[j]) {
@@ -180,18 +202,15 @@ void SAplace::pack(){
     const int macro_id = reversed_pos_seq[i];
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
-    Macro* macro = &macros_[macro_id];
-    odb::Rect rect = macro->getBBox();
-    int x = rect.xMin();
-    int y = rect.yMin();
+    Macro macro = macros_[macro_id];
+    int y = macro.yMin();
 
-    if (!macro->isFixed()) {
+    if (!macro.isFixed()) {
       y = accumulated_length[neg_seq_pos];
-      macro->setLocation(x, y);
-      macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      macro.yMin(y);
     }
 
-    const int current_height = y + rect.dy();
+    const int current_height = y + macro.dy();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_height > accumulated_length[j]) {
@@ -313,7 +332,4 @@ void SAplace::generateRandomIndices(int& index1, int& index2,int& index3)
 }
 
 }
-
-// TODO: swap reverso ao invez de save/restore state
-// TODO: proxy objects para macros também
 

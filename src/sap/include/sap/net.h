@@ -20,9 +20,13 @@ public:
 
     void addMacro(Macro& macro);
 
+    odb::dbNet* getDbNet();
+
+    std::vector<Macro> getMacros();
+
 private:
 
-    std::vector<Macro*> macros_;
+    std::vector<Macro> macros_;
     odb::dbNet* net_;
     int lx_;
     int ux_;

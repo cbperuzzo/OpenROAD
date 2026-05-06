@@ -1,6 +1,7 @@
 #pragma once
 
 #include "odb/db.h"
+#include "Pin.h"
 #include <unordered_set>
 
 namespace sap {
@@ -26,12 +27,17 @@ public:
     int cx();
     int cy();
 
-    std::unordered_set<odb::dbNet*> listDbNets();
+    std::vector<odb::dbITerm*> listITerms();
 
     void update_inst();
 
+    void addPin(Pin* pin);
+
+    std::vector<Pin*> getPins();
+    
 private:
     odb::dbInst* inst_;
+    std::vector<Pin*> pins_;
     int xMin_;
     int yMin_;
     int dx_;

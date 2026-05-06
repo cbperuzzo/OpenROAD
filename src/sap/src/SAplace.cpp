@@ -28,11 +28,7 @@ SAplace::~SAplace(){
 
 }
 
-void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha)
-{
-
-  log_->report("Start simulated annealing with {} threads, {} iterations per T, initial T = {}, alpha = {}", n_threads, iterations_per_T, initial_T, alpha);
-
+void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha) {
   macros_.clear();
   nets_.clear();
 
@@ -43,54 +39,76 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   int n_macros = macros_.size();
 
-  std::map<odb::dbNet*,Net> net_map;
+  std::map<odb::dbNet*,Net*> net_map;  
+  
   for(auto macro : macros_ ){
-    for(auto dbnet : macro.listDbNets()){
-        if (net_map.find(dbnet) != net_map.end()){
-          net_map.at(dbnet).addMacro(macro);
-        }
-        else{
-          Net new_net(dbnet);
-          new_net.addMacro(macro);
-          net_map.insert({dbnet,new_net});
-        }
+    for(auto i : macro.listITerms()){
+      pins_.push_back(Pin(i));
+      macro.addPin(&pins_.back());
+
+      auto db_net = i->getNet();
+      if (net_map.find(db_net) != net_map.end()){
+        net_map.at(db_net)->addDynamicPin(&pins_.back());
+      }
+      else{
+        nets_.push_back(Net(db_net));
+        nets_.back().addDynamicPin(&pins_.back());
+        net_map.at(db_net) = &nets_.back();
+      }
     }
   }
 
-  // debuging start -------------------------------------
-  //
-  //
-  // ----------------------------------------------------
-  /*
+  for (auto net : nets_){
+    auto db_net = net.getDbNet();
+    for(auto i : db_net->getITerms()){
+      if(!net_map.at(db_net)->containsDynamicPin(i)){
+        pins_.push_back(Pin(i));
+        net_map.at(db_net)->addStaticPin(&pins_.back());
+      }
+    }
+  }
+  
 
   log_->report("macros: ");
 
   for (auto macro : macros_){
 
     log_->report("  macro: {}",(void*)(macro.getInst()) );
+
+    for(auto pin : macro.getPins())
+      log_->report("    pin: {}",(void*)(pin->getITerm()) );
+
+
   }
 
   log_->report("nets: ");
 
-  for (auto net : net_map){
-    nets_.push_back(net.second);
-    log_->report("  start net {} :",(void*)(net.second.getDbNet()));
-    
-    for (auto macro : net.second.getMacros()){
-      log_->report("    macro: {}",(void*)(macro.getInst()) );
-    }
+  for (auto net : nets_){
 
-    log_->report("  end net;");
+    log_->report("  net: {}",(void*)(net.getDbNet()) );
+
+    for(auto pin : net.getDynamicPins())
+      log_->report("    d_pin: {}",(void*)(pin->getITerm()) );
+    for(auto pin : net.getStaticPins())
+      log_->report("    s_pin: {}",(void*)(pin->getITerm()) );
+
+  }
+
+  log_->report("pins: ");
+
+  for (auto net : nets_){
+
+    log_->report("  pin: {}",(void*)(net.getDbNet()) );
+
+    for(auto pin : net.getDynamicPins())
+      log_->report("    dx: {}",(void*)(pin->dx()) );
+    for(auto pin : net.getStaticPins())
+      log_->report("    dy: {}",(void*)(pin->dy()) );
+
   }
 
   return;
 
-  */
-  // ----------------------------------------------------
-  //
-  //
-  // debuging end ---------------------------------------
-  
   // random placement
   std::iota(pos_seq_.begin(),pos_seq_.end(),0);
   std::iota(neg_seq_.begin(),neg_seq_.end(),0);

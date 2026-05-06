@@ -5,8 +5,9 @@
 #include <vector>
 #include <random>
 
-#include "net.h"
+#include "Net.h"
 #include "Macro.h"
+#include "Pin.h"
 
 namespace sap{
         
@@ -33,6 +34,7 @@ class SAplace{
 
         std::vector<Macro> macros_;
         std::vector<Net> nets_;
+        std::vector<Pin> pins_;
 
         std::vector<int> pos_seq_;
         std::vector<int> neg_seq_;

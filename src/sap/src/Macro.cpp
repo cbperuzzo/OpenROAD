@@ -20,14 +20,16 @@ bool Macro::isFixed() const {
     return inst_->isFixed();
 }
 
-std::unordered_set<odb::dbNet*> Macro::listDbNets(){
-    std::unordered_set<odb::dbNet*> nets;
+void Macro::addPin(Pin* pin){
+    pins_.push_back(pin);
+}
+
+std::vector<odb::dbITerm*> Macro::listITerms(){
+    std::vector<odb::dbITerm*> i_terms;
     for(auto i : inst_->getITerms()){
-        auto net = i->getNet();
-        if (net != nullptr)
-            nets.insert(net);
+        i_terms.push_back(i);
     }
-    return nets;
+    return i_terms;
 }
 
 void Macro::xMin(int x){
@@ -56,6 +58,10 @@ int Macro::cx(){
 }
 int Macro::cy(){
     return (dy_ + yMin_) / 2;
+}
+
+std::vector<Pin*> Macro::getPins(){
+    return pins_;
 }
 
 void Macro::update_inst(){

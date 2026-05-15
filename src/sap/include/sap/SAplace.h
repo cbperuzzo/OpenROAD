@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <random>
+#include <deque>
 
 #include "Net.h"
 #include "Macro.h"
@@ -32,9 +33,9 @@ class SAplace{
         odb::dbDatabase* db_;
         utl::Logger* log_;
 
-        std::vector<Macro> macros_;
-        std::vector<Net> nets_;
-        std::vector<Pin> pins_;
+        std::deque<Macro> macros_;
+        std::deque<Net> nets_;
+        std::deque<Pin> pins_;
 
         std::vector<int> pos_seq_;
         std::vector<int> neg_seq_;

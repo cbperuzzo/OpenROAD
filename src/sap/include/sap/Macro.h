@@ -27,7 +27,7 @@ public:
     int cx();
     int cy();
 
-    std::vector<odb::dbITerm*> listITerms();
+    odb::dbSet<odb::dbITerm> listITerms();
 
     void update_inst();
 

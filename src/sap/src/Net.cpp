@@ -6,7 +6,6 @@ namespace sap
 
 Net::Net(odb::dbNet* net){
     net_ = net;
-    update();
 }
 
 Net::~Net(){}

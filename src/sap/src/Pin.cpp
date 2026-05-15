@@ -27,6 +27,14 @@ Pin::Pin(odb::dbITerm* i_term){
         yMin_ = y;
     }
 
+    void Pin::xMove(int d){
+        xMin_ = xMin_ + d;
+    }
+
+    void Pin::yMove(int d){
+        yMin_ = yMin_ + d;
+    }
+
     int Pin::dx(){
         return dx_;
     }
@@ -44,5 +52,4 @@ Pin::Pin(odb::dbITerm* i_term){
     odb::dbITerm* Pin::getITerm(){
         return i_term_;
     }
-
 }

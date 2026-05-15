@@ -24,19 +24,25 @@ void Macro::addPin(Pin* pin){
     pins_.push_back(pin);
 }
 
-std::vector<odb::dbITerm*> Macro::listITerms(){
-    std::vector<odb::dbITerm*> i_terms;
-    for(auto i : inst_->getITerms()){
-        i_terms.push_back(i);
-    }
-    return i_terms;
+odb::dbSet<odb::dbITerm> Macro::listITerms(){
+    return inst_->getITerms();
 }
 
 void Macro::xMin(int x){
+    int d = x - xMin_;
     xMin_ = x;
+
+    for(auto pin : pins_){
+        pin->xMove(d);
+    }
 }
 void Macro::yMin(int y){
+    int d = y - yMin_;
     yMin_ = y;
+
+    for(auto pin : pins_){
+        pin->yMove(d);
+    }
 }
 
 int Macro::xMin(){

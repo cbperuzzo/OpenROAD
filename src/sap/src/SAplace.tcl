@@ -6,7 +6,7 @@ namespace eval sap {
         sta::parse_key_args "saplace_simulated_annealing" args keys \
             {-max_reject -iterations_per_T -initial_T -alpha -density -print_period -swap_chance} flags {-simple}
 
-        set iterations_per_T 100
+        set iterations_per_T 400
         if { [info exists keys(-iterations_per_T)] } {
             set iterations_per_T $keys(-iterations_per_T)
             sta::check_positive_integer "-iterations_per_T" $iterations_per_T
@@ -18,7 +18,7 @@ namespace eval sap {
             sta::check_positive_float "-initial_T" $initial_T
         }
 
-        set alpha 0.80
+        set alpha 0.90
         if { [info exists keys(-alpha)] } {
             set alpha $keys(-alpha)
             if { $alpha <= 0.0 || $alpha >= 1.0 } {

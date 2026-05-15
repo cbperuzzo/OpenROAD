@@ -31,34 +31,41 @@ SAplace::~SAplace(){
 void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha) {
   macros_.clear();
   nets_.clear();
+  pins_.clear();
 
   for(auto inst : db_->getChip()->getBlock()->getInsts()){
     if (inst->isBlock())
       macros_.push_back(Macro(inst));
   }
 
-  int n_macros = macros_.size();
-
   std::map<odb::dbNet*,Net*> net_map;  
   
-  for(auto macro : macros_ ){
+  // TODO: pragma omp parallel
+  // mutex to avoid race condition
+  for(auto& macro : macros_ ){
     for(auto i : macro.listITerms()){
+  
+      auto db_net = i->getNet();
+      if (db_net == nullptr){
+        log_->report("netless pin, somehow");
+        continue;
+      }
+
       pins_.push_back(Pin(i));
       macro.addPin(&pins_.back());
-
-      auto db_net = i->getNet();
+      
       if (net_map.find(db_net) != net_map.end()){
         net_map.at(db_net)->addDynamicPin(&pins_.back());
       }
       else{
         nets_.push_back(Net(db_net));
         nets_.back().addDynamicPin(&pins_.back());
-        net_map.at(db_net) = &nets_.back();
+        net_map[db_net] = &nets_.back();
       }
     }
   }
 
-  for (auto net : nets_){
+  for (auto& net : nets_){
     auto db_net = net.getDbNet();
     for(auto i : db_net->getITerms()){
       if(!net_map.at(db_net)->containsDynamicPin(i)){
@@ -67,47 +74,9 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
       }
     }
   }
-  
 
-  log_->report("macros: ");
-
-  for (auto macro : macros_){
-
-    log_->report("  macro: {}",(void*)(macro.getInst()) );
-
-    for(auto pin : macro.getPins())
-      log_->report("    pin: {}",(void*)(pin->getITerm()) );
-
-
-  }
-
-  log_->report("nets: ");
-
-  for (auto net : nets_){
-
-    log_->report("  net: {}",(void*)(net.getDbNet()) );
-
-    for(auto pin : net.getDynamicPins())
-      log_->report("    d_pin: {}",(void*)(pin->getITerm()) );
-    for(auto pin : net.getStaticPins())
-      log_->report("    s_pin: {}",(void*)(pin->getITerm()) );
-
-  }
-
-  log_->report("pins: ");
-
-  for (auto net : nets_){
-
-    log_->report("  pin: {}",(void*)(net.getDbNet()) );
-
-    for(auto pin : net.getDynamicPins())
-      log_->report("    dx: {}",(void*)(pin->dx()) );
-    for(auto pin : net.getStaticPins())
-      log_->report("    dy: {}",(void*)(pin->dy()) );
-
-  }
-
-  return;
+  pos_seq_.resize(macros_.size());
+  neg_seq_.resize(macros_.size());
 
   // random placement
   std::iota(pos_seq_.begin(),pos_seq_.end(),0);
@@ -116,13 +85,16 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
   std::shuffle(pos_seq_.begin(),pos_seq_.end(),generator_);
   std::shuffle(neg_seq_.begin(),neg_seq_.end(),generator_);
   
+  for(auto& net : nets_)
+    net.updateStaticBBox();
+  
   pack();
   float cost = calcCost();
   float best_cost = cost;
   best_pos_seq_ = pos_seq_;
   best_neg_seq_ = neg_seq_;
   float temperature = initial_T;
-
+  int t_iterations = 0;
   while(temperature >= 1) {
     for(int iteration = 0; iteration < iterations_per_T; iteration++){
 
@@ -156,12 +128,19 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
       
     }
     temperature *= alpha;
+    log_->report("it: {} cost: {} ",t_iterations ,calcCost());
+    t_iterations++;
   }
 
   pos_seq_ = best_pos_seq_;
   neg_seq_ = best_neg_seq_;
 
   pack();
+
+  log_->report("best cost (lowest): {} ",calcCost());
+
+  for(auto& macro : macros_)
+    macro.update_inst();
 
   log_->report("Finished simulated annealing");
 
@@ -180,7 +159,7 @@ void SAplace::pack(){
   for (int macro_id : pos_seq_) {
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
-    Macro macro = macros_[macro_id];
+    Macro& macro = macros_[macro_id];
     int x = macro.xMin();
 
     if (!macro.isFixed()) {
@@ -220,7 +199,7 @@ void SAplace::pack(){
     const int macro_id = reversed_pos_seq[i];
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
-    Macro macro = macros_[macro_id];
+    Macro& macro = macros_[macro_id];
     int y = macro.yMin();
 
     if (!macro.isFixed()) {
@@ -241,7 +220,7 @@ void SAplace::pack(){
 
   height_ = accumulated_length[pos_seq_.size() - 1];
 
-  for (auto net : nets_){
+  for (auto& net : nets_){
     net.update();
   }
   

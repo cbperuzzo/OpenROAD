@@ -15,6 +15,9 @@ public:
     void xMin(int x);
     void yMin(int y);
 
+    void xMove(int d);
+    void yMove(int d);
+
     int dx();
     int dy();
 

@@ -96,6 +96,7 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
   float temperature = initial_T;
   int t_iterations = 0;
   while(temperature >= 1) {
+    int internal_counter = 0;
     for(int iteration = 0; iteration < iterations_per_T; iteration++){
 
       saveState();
@@ -115,16 +116,24 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
       }
       // migth accept, event though cost incressed
       else{
-        const float accept_chance = std::exp(-delta / temperature);
+        float accept_chance = std::exp(-delta / temperature);
         float num = prob_(generator_);
-        if (num < accept_chance){
+        bool accepted = num < accept_chance;
+        if (accepted){
           cost = new_cost;
         }
         else{
           restoreState();
         }
-        
+        if(temperature > 4000 && (internal_counter % 25 == 0 || accepted)){
+          log_->report("accepted ? : {} ", accepted);
+          log_->report("temp: {:.2f} ", temperature);
+          log_->report("delta: {:.1f} ", delta);
+          log_->report("acc_chance: {:.3f} ", accept_chance);
+          log_->report("-------------------------");
+        }
       }
+      internal_counter++;
       
     }
     temperature *= alpha;
@@ -143,6 +152,7 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
     macro.update_inst();
 
   log_->report("Finished simulated annealing");
+  log_->report("-------------------------");
 
 }
 

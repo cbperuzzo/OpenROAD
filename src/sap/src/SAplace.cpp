@@ -96,7 +96,6 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
   float temperature = initial_T;
   int t_iterations = 0;
   while(temperature >= 1) {
-    int internal_counter = 0;
     for(int iteration = 0; iteration < iterations_per_T; iteration++){
 
       saveState();
@@ -125,15 +124,7 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
         else{
           restoreState();
         }
-        if(temperature > 4000 && (internal_counter % 25 == 0 || accepted)){
-          log_->report("accepted ? : {} ", accepted);
-          log_->report("temp: {:.2f} ", temperature);
-          log_->report("delta: {:.1f} ", delta);
-          log_->report("acc_chance: {:.3f} ", accept_chance);
-          log_->report("-------------------------");
-        }
       }
-      internal_counter++;
       
     }
     temperature *= alpha;

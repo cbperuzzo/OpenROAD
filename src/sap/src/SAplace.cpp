@@ -14,7 +14,9 @@ SAplace::SAplace(odb::dbDatabase* db, utl::Logger* log):
   best_pos_seq_(),
   best_neg_seq_(),
   macros_(),
-  nets_()
+  nets_(),
+  max_h_(0),
+  max_w_(0)
 {
   db_ = db;
   log_ = log;
@@ -28,11 +30,14 @@ SAplace::~SAplace(){
 
 }
 
-void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha) {
+void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_size) {
   macros_.clear();
   nets_.clear();
   pins_.clear();
 
+  max_h_ = db_->getChip()->getBlock()->getCoreArea().dx();
+  max_w_ = db_->getChip()->getBlock()->getCoreArea().dy();
+  
   for(auto inst : db_->getChip()->getBlock()->getInsts()){
     if (inst->isBlock())
       macros_.push_back(Macro(inst));
@@ -84,6 +89,9 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   std::shuffle(pos_seq_.begin(),pos_seq_.end(),generator_);
   std::shuffle(neg_seq_.begin(),neg_seq_.end(),generator_);
+
+  for(auto& macro : macros_)
+    macro.applyHalo(halo_size, halo_size);
   
   for(auto& net : nets_)
     net.updateStaticBBox();
@@ -139,8 +147,11 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   log_->report("best cost (lowest): {} ",calcCost());
 
+
+  int core_origin_x = db_->getChip()->getBlock()->getCoreArea().xMin();
+  int core_origin_y = db_->getChip()->getBlock()->getCoreArea().yMin();
   for(auto& macro : macros_)
-    macro.update_inst();
+    macro.update_inst_with_offset(core_origin_x,core_origin_y);
 
   log_->report("Finished simulated annealing");
   log_->report("-------------------------");
@@ -244,14 +255,11 @@ float SAplace::calcCost(){
 float SAplace::penalties(){
   float penalty = 0.0;
   
-  int max_h = db_->getChip()->getBlock()->getBBox()->getDY();
-  int max_w = db_->getChip()->getBlock()->getBBox()->getDX();
-
-  if(height_ >= max_h){
+  if(height_ >= max_h_){
     penalty += 1e+7; 
   }
   
-  if(width_ >= max_w){
+  if(width_ >= max_w_){
     penalty += 1e+7;
   }
 

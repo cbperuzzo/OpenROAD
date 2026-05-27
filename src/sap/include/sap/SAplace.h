@@ -17,7 +17,7 @@ class SAplace{
         SAplace(odb::dbDatabase* db, utl::Logger* logger);
         ~SAplace();
 
-        void simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha);
+        void simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_size);
     
     private:
         int hpwl();
@@ -50,6 +50,10 @@ class SAplace{
 
         int width_;
         int height_;
+
+        int max_h_;
+        int max_w_;
+
 
 };
 

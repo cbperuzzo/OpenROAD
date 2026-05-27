@@ -21,11 +21,11 @@ using sap::SAplace;
 
 
 void
-saplace_simulated_annealing_simple_cmd(int iterations_per_T, double initial_T, double alpha)
+saplace_simulated_annealing_simple_cmd(int iterations_per_T, double initial_T, double alpha, int halo_size)
 {
   SAplace* saplace = getSAplace();
   int threads = ord::OpenRoad::openRoad()->getThreadCount();
-  saplace->simulatedAnnealing(threads,iterations_per_T, initial_T, alpha);
+  saplace->simulatedAnnealing(threads, iterations_per_T, initial_T, alpha, halo_size);
 }
 
 

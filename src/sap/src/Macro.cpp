@@ -89,13 +89,13 @@ std::vector<Pin*> Macro::getPins(){
     return pins_;
 }
 
-void Macro::update_inst(){
+void Macro::updateInst(){
     inst_->setOrigin(xMin_ + dx_to_macro, yMin_ + dy_to_macro);
     inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
 }
 
-void Macro::update_inst_with_offset(int dx, int dy){
+void Macro::updateInstWithOffset(int dx, int dy){
     inst_->setOrigin(xMin_ + dx_to_macro + dx, yMin_ + dy_to_macro + dy);
     inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 

@@ -24,11 +24,12 @@ class SAplace{
         void perturb();
         float calcCost();
         float penalties();
-        void pack();
+        void pack(int offset_x, int offset_y);
         void saveState();
         void restoreState();
         void generateRandomIndices(int& index1, int& index2);
         void generateRandomIndices(int& index1, int& index2,int& index3);
+        void initializeProxies();
         
         odb::dbDatabase* db_;
         utl::Logger* log_;

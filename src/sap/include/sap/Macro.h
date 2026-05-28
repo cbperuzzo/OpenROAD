@@ -29,9 +29,9 @@ public:
 
     odb::dbSet<odb::dbITerm> listITerms();
 
-    void update_inst();
+    void updateInst();
 
-    void update_inst_with_offset(int dx, int dy);
+    void updateInstWithOffset(int dx, int dy);
 
     void addPin(Pin* pin);
 

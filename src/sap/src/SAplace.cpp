@@ -37,49 +37,15 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   max_h_ = db_->getChip()->getBlock()->getCoreArea().dx();
   max_w_ = db_->getChip()->getBlock()->getCoreArea().dy();
+
+  initializeProxies();
+
+  for(auto& macro : macros_)
+    macro.applyHalo(halo_size, halo_size);
   
-  for(auto inst : db_->getChip()->getBlock()->getInsts()){
-    if (inst->isBlock())
-      macros_.push_back(Macro(inst));
-  }
-
-  std::map<odb::dbNet*,Net*> net_map;  
+  for(auto& net : nets_)
+    net.updateStaticBBox();
   
-  // TODO: pragma omp parallel
-  // mutex to avoid race condition
-  for(auto& macro : macros_ ){
-    for(auto i : macro.listITerms()){
-  
-      auto db_net = i->getNet();
-      if (db_net == nullptr){
-        log_->report("netless pin, somehow");
-        continue;
-      }
-
-      pins_.push_back(Pin(i));
-      macro.addPin(&pins_.back());
-      
-      if (net_map.find(db_net) != net_map.end()){
-        net_map.at(db_net)->addDynamicPin(&pins_.back());
-      }
-      else{
-        nets_.push_back(Net(db_net));
-        nets_.back().addDynamicPin(&pins_.back());
-        net_map[db_net] = &nets_.back();
-      }
-    }
-  }
-
-  for (auto& net : nets_){
-    auto db_net = net.getDbNet();
-    for(auto i : db_net->getITerms()){
-      if(!net_map.at(db_net)->containsDynamicPin(i)){
-        pins_.push_back(Pin(i));
-        net_map.at(db_net)->addStaticPin(&pins_.back());
-      }
-    }
-  }
-
   pos_seq_.resize(macros_.size());
   neg_seq_.resize(macros_.size());
 
@@ -90,13 +56,10 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
   std::shuffle(pos_seq_.begin(),pos_seq_.end(),generator_);
   std::shuffle(neg_seq_.begin(),neg_seq_.end(),generator_);
 
-  for(auto& macro : macros_)
-    macro.applyHalo(halo_size, halo_size);
+  int core_origin_x = db_->getChip()->getBlock()->getCoreArea().xMin();
+  int core_origin_y = db_->getChip()->getBlock()->getCoreArea().yMin();
   
-  for(auto& net : nets_)
-    net.updateStaticBBox();
-  
-  pack();
+  pack(core_origin_x, core_origin_y);
   float cost = calcCost();
   float best_cost = cost;
   best_pos_seq_ = pos_seq_;
@@ -108,7 +71,7 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
       saveState();
       perturb();
-      pack();
+      pack(core_origin_x, core_origin_y);
 
       float new_cost = calcCost();
       float delta = new_cost - cost;
@@ -143,22 +106,19 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
   pos_seq_ = best_pos_seq_;
   neg_seq_ = best_neg_seq_;
 
-  pack();
+  pack(core_origin_x, core_origin_y);
 
   log_->report("best cost (lowest): {} ",calcCost());
 
-
-  int core_origin_x = db_->getChip()->getBlock()->getCoreArea().xMin();
-  int core_origin_y = db_->getChip()->getBlock()->getCoreArea().yMin();
   for(auto& macro : macros_)
-    macro.update_inst_with_offset(core_origin_x,core_origin_y);
+    macro.updateInst();
 
   log_->report("Finished simulated annealing");
   log_->report("-------------------------");
 
 }
 
-void SAplace::pack(){
+void SAplace::pack(int offset_x, int offset_y){
   
   std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
 
@@ -167,7 +127,7 @@ void SAplace::pack(){
     sequence_pair_pos[neg_seq_[i]].second = i;
   }
 
-  std::vector<int> accumulated_length(pos_seq_.size(), 0);
+  std::vector<int> accumulated_length(pos_seq_.size(), offset_x);
   for (int macro_id : pos_seq_) {
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
@@ -204,7 +164,7 @@ void SAplace::pack(){
 
     // This is actually the accumulated height, but we use the same vector
     // to avoid more allocation.
-    accumulated_length[i] = 0;
+    accumulated_length[i] = offset_y;
   }
 
   for (int i = 0; i < pos_seq_.size(); i++) {
@@ -236,6 +196,49 @@ void SAplace::pack(){
     net.update();
   }
   
+}
+
+void SAplace::initializeProxies(){
+  for(auto inst : db_->getChip()->getBlock()->getInsts()){
+    if (inst->isBlock())
+      macros_.push_back(Macro(inst));
+  }
+
+  std::map<odb::dbNet*,Net*> net_map;  
+  
+  for(auto& macro : macros_ ){
+    for(auto i : macro.listITerms()){
+  
+      auto db_net = i->getNet();
+      if (db_net == nullptr){
+        log_->report("netless pin, somehow");
+        continue;
+      }
+
+      pins_.push_back(Pin(i));
+      macro.addPin(&pins_.back());
+      
+      if (net_map.find(db_net) != net_map.end()){
+        net_map.at(db_net)->addDynamicPin(&pins_.back());
+      }
+      else{
+        nets_.push_back(Net(db_net));
+        nets_.back().addDynamicPin(&pins_.back());
+        net_map[db_net] = &nets_.back();
+      }
+    }
+  }
+
+  for (auto& net : nets_){
+    auto db_net = net.getDbNet();
+    for(auto i : db_net->getITerms()){
+      if(!net_map.at(db_net)->containsDynamicPin(i)){
+        pins_.push_back(Pin(i));
+        net_map.at(db_net)->addStaticPin(&pins_.back());
+      }
+    }
+  }
+
 }
 
 void SAplace::saveState(){

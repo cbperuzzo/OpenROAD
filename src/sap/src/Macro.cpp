@@ -98,7 +98,10 @@ void Macro::updateInst(){
 void Macro::updateInstWithOffset(int dx, int dy){
     inst_->setOrigin(xMin_ + dx_to_macro + dx, yMin_ + dy_to_macro + dy);
     inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+}
 
+void Macro::createHaloBlockage(odb::dbBlock* chip_block){
+    odb::dbBlockage::create(chip_block, xMin_, yMin_, xMin_ + dx_, yMin_ + dy_);
 }
 
 }

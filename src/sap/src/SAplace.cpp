@@ -99,7 +99,7 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
       
     }
     temperature *= alpha;
-    log_->report("it: {} cost: {} ",t_iterations ,calcCost());
+    log_->report("it: {} cost: {}",t_iterations ,calcCost());
     t_iterations++;
   }
 
@@ -108,11 +108,13 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
 
   pack(core_origin_x, core_origin_y);
 
-  log_->report("best cost (lowest): {} ",calcCost());
-
-  for(auto& macro : macros_)
+  for(auto& macro : macros_){
     macro.updateInst();
-
+    macro.createHaloBlockage(db_->getChip()->getBlock());
+  }
+  
+  log_->report("-------------------------");
+  log_->report("best cost (lowest): {} ",calcCost());
   log_->report("Finished simulated annealing");
   log_->report("-------------------------");
 

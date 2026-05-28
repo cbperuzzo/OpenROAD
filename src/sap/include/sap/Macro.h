@@ -37,6 +37,8 @@ public:
 
     void applyHalo(int halo_width, int halo_heigh );
 
+    void createHaloBlockage(odb::dbBlock* chip_block);
+
     std::vector<Pin*> getPins();
     
 private:

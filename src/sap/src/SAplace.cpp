@@ -30,7 +30,7 @@ SAplace::~SAplace(){
 
 }
 
-void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_size) {
+void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height) {
   macros_.clear();
   nets_.clear();
   pins_.clear();
@@ -41,7 +41,7 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
   initializeProxies();
 
   for(auto& macro : macros_)
-    macro.applyHalo(halo_size, halo_size);
+    macro.applyHalo(halo_width, halo_height);
   
   for(auto& net : nets_)
     net.updateStaticBBox();

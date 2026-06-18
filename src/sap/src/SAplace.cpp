@@ -206,7 +206,7 @@ void SAplace::initializeProxies(){
       macros_.push_back(Macro(inst));
   }
 
-  std::map<odb::dbNet*,Net*> net_map;  
+  std::map<uint32_t,Net*> net_map;  
   
   for(auto& macro : macros_ ){
     for(auto i : macro.listITerms()){
@@ -220,13 +220,13 @@ void SAplace::initializeProxies(){
       pins_.push_back(Pin(i));
       macro.addPin(&pins_.back());
       
-      if (net_map.find(db_net) != net_map.end()){
-        net_map.at(db_net)->addDynamicPin(&pins_.back());
+      if (net_map.find(db_net->getId()) != net_map.end()){
+        net_map.at(db_net->getId())->addDynamicPin(&pins_.back());
       }
       else{
         nets_.push_back(Net(db_net));
         nets_.back().addDynamicPin(&pins_.back());
-        net_map[db_net] = &nets_.back();
+        net_map[db_net->getId()] = &nets_.back();
       }
     }
   }
@@ -234,9 +234,9 @@ void SAplace::initializeProxies(){
   for (auto& net : nets_){
     auto db_net = net.getDbNet();
     for(auto i : db_net->getITerms()){
-      if(!net_map.at(db_net)->containsDynamicPin(i)){
+      if(!net_map.at(db_net->getId())->containsDynamicPin(i)){
         pins_.push_back(Pin(i));
-        net_map.at(db_net)->addStaticPin(&pins_.back());
+        net_map.at(db_net->getId())->addStaticPin(&pins_.back());
       }
     }
   }

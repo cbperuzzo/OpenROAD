@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",
@@ -29,8 +30,7 @@ COMPULSORY_TESTS = [
     "colocated_sinks",
     "dummy_load",
     "find_clock",
-    #   cmake gives 17.47 um ave sink WL vs. bazel 11.54 um
-    #    "find_clock_pad",
+    "find_clock_pad",
     "gated_clock1",
     "gated_clock2",
     "gated_clock3",
@@ -51,6 +51,7 @@ COMPULSORY_TESTS = [
     "sink_clustering_collision",
     "skip_nets",
     "twice",
+    "virtual_clock_latency",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -215,6 +216,9 @@ filegroup(
                 "gated_clock2.def",
             ],
             "twice": [
+                "16sinks.def",
+            ],
+            "virtual_clock_latency": [
                 "16sinks.def",
             ],
         }.get(test_name, []),

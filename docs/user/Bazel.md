@@ -59,6 +59,16 @@ Without offering any deeper insight some comments about what is shown above:
 - `exec` means host, appears with `ST` and an extra hash at the end
 - `k8` always there, possibly referring to [K8](https://en.wikipedia.org/wiki/X86-64)
 
+### LTO
+
+The default Bazel build (`fastbuild`) does not enable Link Time Optimization
+(LTO). `-c opt` enables optimization without LTO; `--config=opt` adds LTO
+on top, which improves runtime by ~11% at the cost of a much longer
+(single-threaded) link step. Use `--config=opt` for production binaries
+shipped to end users; keep the default for the local edit-rebuild loop.
+The CMake build has LTO on by default in Release mode -- see the
+[CMake LTO option](Build.md#lto-options).
+
 ## Using OpenROAD as a dependency from another project
 
 OpenROAD can be consumed as a Bazel module (`bazel_dep`) from another
@@ -117,7 +127,7 @@ register_toolchains("@llvm_toolchain//:all")
 The following are `dev_dependency` in OpenROAD and will not be forced
 on downstream projects via MVS:
 
-- `rules_shell`, `rules_pkg` — only needed for `//packaging:install`
+- rules_pkg — only needed for //:install
 - `rules_verilator`, `verilator` — only needed for test/orfs simulation
 - `toolchains_llvm` extension and toolchain registration
 
@@ -461,7 +471,7 @@ Run up to the failing stage and stop with ctrl-c on the step that you want to ru
 
 Now run the whittler with stock `python3` — no extra packages needed beyond
 the standard library. You are responsible for having `openroad` on your
-`PATH` first (e.g. after `bazelisk run //packaging:install` and `source env.sh` in
+`PATH` first (e.g. after `bazelisk run //:install` and `source env.sh` in
 an ORFS checkout):
 
     python3 etc/whittle.py --error_string GPL-0305 --base_db_path 3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"

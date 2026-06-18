@@ -47,7 +47,11 @@ or_integration_tests(
     mirror2
     mirror3
     multi_height_one_site_gap_disallow
+    multi_height_power_align
     multi_height_rows
+    negotiation01
+    negotiation_one_site_gap
+    negotiation_regions
     obstruction1
     obstruction2
     one_site_gap_disallow

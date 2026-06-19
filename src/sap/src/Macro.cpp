@@ -91,7 +91,7 @@ std::vector<Pin*> Macro::getPins(){
 
 void Macro::updateInst(){
     inst_->setOrigin(xMin_ + dx_to_macro, yMin_ + dy_to_macro);
-    inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    inst_->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 
 }
 

@@ -3,6 +3,7 @@
 #include "odb/db.h"
 #include "Pin.h"
 #include <unordered_set>
+#include <vector>
 
 namespace sap {
 

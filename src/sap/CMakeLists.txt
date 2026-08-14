@@ -24,6 +24,7 @@ target_sources(sap
     src/Net.cpp
     src/Macro.cpp
     src/Pin.cpp
+    src/AdjacencyGraphBuilder.cpp
 )
 
 messages(TARGET sap)
@@ -37,8 +38,9 @@ target_include_directories(sap
 )
 
 target_link_libraries(sap
-    OpenSTA            
-    odb                                
+    OpenSTA
+    dbSta_lib
+    odb
     Eigen3::Eigen
     Threads::Threads
     OpenMP::OpenMP_CXX

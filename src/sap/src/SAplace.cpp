@@ -1,12 +1,14 @@
 #include "sap/SAplace.h"
 
+#include "sap/AdjacencyGraphBuilder.h"
 #include "sta/StaMain.hh"
 #include "odb/db.h"
+#include "utl/Logger.h"
 #include <map>
 
 namespace sap{
 
-SAplace::SAplace(odb::dbDatabase* db, utl::Logger* log):
+SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
   pos_seq_(),
   neg_seq_(),
   pos_seq_backup_(),
@@ -19,11 +21,12 @@ SAplace::SAplace(odb::dbDatabase* db, utl::Logger* log):
   max_w_(0)
 {
   db_ = db;
+  sta_ = sta;
   log_ = log;
   generator_ = std::default_random_engine(44);
   prob_ = std::uniform_real_distribution<float>(0,1);
   move_ = std::uniform_int_distribution<int>(0,1);
-  
+
 }
 
 SAplace::~SAplace(){
@@ -39,6 +42,7 @@ void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double ini
   max_w_ = db_->getChip()->getBlock()->getCoreArea().dy();
 
   initializeProxies();
+  buildAdjacencyGraph();
 
   for(auto& macro : macros_)
     macro.applyHalo(halo_width, halo_height);
@@ -241,6 +245,28 @@ void SAplace::initializeProxies(){
     }
   }
 
+}
+
+void SAplace::buildAdjacencyGraph(){
+  AdjacencyGraphBuilder builder(sta_, db_, log_);
+  AdjacencyMatrix matrix = builder.build(macros_);
+
+  log_->report("-------------------------");
+  log_->report("Macro adjacency matrix ({} macros)", macros_.size());
+  for (size_t i = 0; i < macros_.size(); i++) {
+    std::string row;
+    for (size_t j = 0; j < macros_.size(); j++) {
+      auto key = i < j ? std::make_pair((int) i, (int) j)
+                        : std::make_pair((int) j, (int) i);
+      auto it = matrix.find(key);
+      row += std::to_string(it != matrix.end() ? it->second : 0);
+      if (j + 1 < macros_.size()) {
+        row += " ";
+      }
+    }
+    log_->report("{}: {}", macros_[i].getInst()->getConstName(), row);
+  }
+  log_->report("-------------------------");
 }
 
 void SAplace::saveState(){

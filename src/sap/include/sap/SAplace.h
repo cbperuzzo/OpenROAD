@@ -10,15 +10,19 @@
 #include "Macro.h"
 #include "Pin.h"
 
+namespace sta {
+class dbSta;
+}
+
 namespace sap{
-        
+
 class SAplace{
     public:
-        SAplace(odb::dbDatabase* db, utl::Logger* logger);
+        SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
         ~SAplace();
 
         void simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height);
-    
+
     private:
         int hpwl();
         void perturb();
@@ -30,8 +34,10 @@ class SAplace{
         void generateRandomIndices(int& index1, int& index2);
         void generateRandomIndices(int& index1, int& index2,int& index3);
         void initializeProxies();
-        
+        void buildAdjacencyGraph();
+
         odb::dbDatabase* db_;
+        sta::dbSta* sta_;
         utl::Logger* log_;
 
         std::deque<Macro> macros_;

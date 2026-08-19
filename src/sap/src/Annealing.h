@@ -12,53 +12,68 @@
 namespace sap{
 
 class Annealing{
-    public:
-        Annealing(
-            std::vector<Macro> macros,
-            std::vector<Net> nets,
-            int max_w,
-            int max_h,
-            std::default_random_engine& generator,
-            std::uniform_real_distribution<float>& prob,
-            std::uniform_int_distribution<int>& move
-        );
-        ~Annealing();
+public:
 
-        void run(int iterations_per_T, double initial_T, double alpha);
+    enum Corner {LL,UL,LR,UR};
 
-        std::vector<Macro> getMacros();
+    Annealing(
+        std::vector<Macro> macros,
+        std::vector<Net> nets,
+        int max_w,
+        int max_h,
+        int origin_x,
+        int orign_y,
+        // the exact packing strategy might change a bit based on the corner selected
+        Corner corner,
+        int offset_x,
+        int offset_y,
+        std::default_random_engine& generator,
+        std::uniform_real_distribution<float>& prob,
+        std::uniform_int_distribution<int>& move
+    );
+    ~Annealing();
 
-    private:
-        int hpwl();
-        void perturb();
-        float calcCost();
-        float penalties();
-        void pack(int offset_x, int offset_y);
-        void saveState();
-        void restoreState();
-        void generateRandomIndices(int& index1, int& index2);
-        void generateRandomIndices(int& index1, int& index2,int& index3);
+    void run(int iterations_per_T, double initial_T, double alpha);
+
+    std::vector<Macro> getMacros();
+
+private:
         
+    int hpwl();
+    void perturb();
+    float calcCost();
+    float penalties();
+    void pack();
+    void saveState();
+    void restoreState();
+    void generateRandomIndices(int& index1, int& index2);
+    void generateRandomIndices(int& index1, int& index2,int& index3);
+        
+    std::vector<Macro> macros_;
+    std::vector<Net> nets_;
 
-        std::vector<Macro> macros_;
-        std::vector<Net> nets_;
+    std::vector<int> pos_seq_;
+    std::vector<int> neg_seq_;
+    std::vector<int> pos_seq_backup_;
+    std::vector<int> neg_seq_backup_;
+    std::vector<int> best_pos_seq_;
+    std::vector<int> best_neg_seq_;
 
-        std::vector<int> pos_seq_;
-        std::vector<int> neg_seq_;
-        std::vector<int> pos_seq_backup_;
-        std::vector<int> neg_seq_backup_;
-        std::vector<int> best_pos_seq_;
-        std::vector<int> best_neg_seq_;
+    std::default_random_engine generator_;
+    std::uniform_real_distribution<float> prob_;
+    std::uniform_int_distribution<int> move_;
 
-        std::default_random_engine generator_;
-        std::uniform_real_distribution<float> prob_;
-        std::uniform_int_distribution<int> move_;
-
-        int width_;
-        int height_;
-
+    struct{
+        int origin_x;
+        int origin_y;
+        int offset_x;
+        int offset_y;
         int max_h_;
         int max_w_;
+    } packing_params_;
+
+    int width_;
+    int height_;
 
 
 };

@@ -1,4 +1,4 @@
-#include "Annealing.h"
+#include "sap/Annealing.h"
 
 namespace sap
 {
@@ -61,6 +61,69 @@ Annealing::Annealing(
     packing_ops_.ahead_y = std::less<int>();
     packing_ops_.finish_y = [](int origin_y, int acc) { return origin_y - acc; };
   }
+}
+
+Annealing::~Annealing(){};
+
+void Annealing::run(int iterations_per_T, double initial_T, double alpha){
+
+  pos_seq_.resize(macros_.size());
+  neg_seq_.resize(macros_.size());
+
+  // random placement
+  std::iota(pos_seq_.begin(),pos_seq_.end(),0);
+  std::iota(neg_seq_.begin(),neg_seq_.end(),0);
+
+  std::shuffle(pos_seq_.begin(),pos_seq_.end(),generator_);
+  std::shuffle(neg_seq_.begin(),neg_seq_.end(),generator_);
+  
+  pack();
+  float cost = calcCost();
+  float best_cost = cost;
+  best_pos_seq_ = pos_seq_;
+  best_neg_seq_ = neg_seq_;
+  float temperature = initial_T;
+  int t_iterations = 0;
+  while(temperature >= 1) {
+    for(int iteration = 0; iteration < iterations_per_T; iteration++){
+
+      saveState();
+      perturb();
+      pack();
+
+      float new_cost = calcCost();
+      float delta = new_cost - cost;
+      
+      if (delta <= 0){
+        cost = new_cost;
+        if(new_cost < best_cost){
+          best_cost = new_cost;
+          best_pos_seq_ = pos_seq_;
+          best_neg_seq_ = neg_seq_;
+        }
+      }
+      // migth accept, event though cost incressed
+      else{
+        float accept_chance = std::exp(-delta / temperature);
+        float num = prob_(generator_);
+        bool accepted = num < accept_chance;
+        if (accepted){
+          cost = new_cost;
+        }
+        else{
+          restoreState();
+        }
+      }
+      
+    }
+    temperature *= alpha;
+    t_iterations++;
+  }
+
+  pos_seq_ = best_pos_seq_;
+  neg_seq_ = best_neg_seq_;
+
+  pack();
 }
 
 void Annealing::pack(){
@@ -213,8 +276,7 @@ void Annealing::perturb(){
   
 }
 
-void Annealing::generateRandomIndices(int& index1, int& index2)
-{
+void Annealing::generateRandomIndices(int& index1, int& index2){
 
   index1 =  rand() % pos_seq_.size();
   index2 = rand() % pos_seq_.size();
@@ -224,8 +286,7 @@ void Annealing::generateRandomIndices(int& index1, int& index2)
   }
 }
 
-void Annealing::generateRandomIndices(int& index1, int& index2,int& index3)
-{
+void Annealing::generateRandomIndices(int& index1, int& index2,int& index3){
 
   index1 =  rand() % pos_seq_.size();
   index2 = rand() % pos_seq_.size();

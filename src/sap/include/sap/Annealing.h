@@ -1,15 +1,13 @@
 #pragma once
 
-#include "odb/db.h"
-
 #include <vector>
 #include <random>
 #include <deque>
 #include <functional>
 
-#include "sap/Net.h"
-#include "sap/Macro.h"
-#include "sap/Pin.h"
+#include "Net.h"
+#include "Macro.h"
+#include "Pin.h"
 
 namespace sap{
 

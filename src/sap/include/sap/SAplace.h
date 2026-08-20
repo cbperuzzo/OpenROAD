@@ -5,11 +5,12 @@
 #include <vector>
 #include <random>
 #include <deque>
+#include <array>
 
 #include "Net.h"
 #include "Macro.h"
 #include "Pin.h"
-
+#include "Annealing.h"
 namespace sta {
 class dbSta;
 }
@@ -17,32 +18,36 @@ class dbSta;
 namespace sap{
 
 class SAplace{
+
+    typedef struct Partition {
+        std::vector<Macro*> macros;
+        std::vector<Net*> nets;
+        Annealing::Corner corner;
+    };
+
     public:
         SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
         ~SAplace();
 
-        void simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height);
+        void init(int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height);
 
     private:
-        int hpwl();
-        void perturb();
-        float calcCost();
-        float penalties();
-        void pack(int offset_x, int offset_y);
-        void saveState();
-        void restoreState();
-        void generateRandomIndices(int& index1, int& index2);
-        void generateRandomIndices(int& index1, int& index2,int& index3);
+        
         void initializeProxies();
         void buildAdjacencyGraph();
+        //gets all the nets have pins in this set of macros and also have pins in other macros;
+        std::vector<Net*> findSharedNets(std::unordered_set<Macro*>& macros);
+        std::array<Partition, 4> getPartitions();
 
         odb::dbDatabase* db_;
         sta::dbSta* sta_;
         utl::Logger* log_;
 
-        std::deque<Macro> macros_;
-        std::deque<Net> nets_;
-        std::deque<Pin> pins_;
+        std::vector<Macro> macros_;
+        std::vector<Net> nets_;
+        std::vector<Pin> pins_;
+
+        std::map<Net*,std::unordered_set<Macro*>> shared_nets_;
 
         std::vector<int> pos_seq_;
         std::vector<int> neg_seq_;

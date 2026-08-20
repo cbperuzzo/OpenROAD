@@ -25,7 +25,7 @@ AdjacencyGraphBuilder::AdjacencyGraphBuilder(sta::dbSta* sta,
 {
 }
 
-AdjacencyMatrix AdjacencyGraphBuilder::build(std::deque<Macro>& macros)
+AdjacencyMatrix AdjacencyGraphBuilder::build(std::vector<Macro>& macros)
 {
   const size_t macro_count = macros.size();
 
@@ -83,7 +83,7 @@ bool AdjacencyGraphBuilder::isMissingLiberty()
 
 void AdjacencyGraphBuilder::seedFaninBfs(sta::BfsFwdIterator& bfs,
                                          VertexFaninMap& vertex_fanins,
-                                         std::deque<Macro>& macros)
+                                         std::vector<Macro>& macros)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
@@ -194,7 +194,7 @@ sta::Pin* AdjacencyGraphBuilder::findSeqOutPin(sta::Instance* inst,
 
 void AdjacencyGraphBuilder::findAdjWeights(VertexFaninMap& vertex_fanins,
                                            AdjWeightMap& adj_map,
-                                           std::deque<Macro>& macros)
+                                           std::vector<Macro>& macros)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
@@ -223,7 +223,7 @@ void AdjacencyGraphBuilder::findAdjWeights(VertexFaninMap& vertex_fanins,
 }
 
 AdjacencyMatrix AdjacencyGraphBuilder::fillMatrix(AdjWeightMap& adj_map,
-                                                  std::deque<Macro>& macros)
+                                                  std::vector<Macro>& macros)
 {
   AdjacencyMatrix matrix;
 

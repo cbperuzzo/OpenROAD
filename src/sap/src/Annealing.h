@@ -5,10 +5,12 @@
 #include <vector>
 #include <random>
 #include <deque>
+#include <functional>
 
 #include "sap/Net.h"
 #include "sap/Macro.h"
 #include "sap/Pin.h"
+
 namespace sap{
 
 class Annealing{
@@ -35,7 +37,7 @@ public:
 
     void run(int iterations_per_T, double initial_T, double alpha);
 
-    std::vector<Macro> getMacros();
+    std::vector<Macro> getMacros() { return macros_; }
 
 private:
         
@@ -66,11 +68,25 @@ private:
     struct{
         int origin_x;
         int origin_y;
-        int offset_x;
-        int offset_y;
-        int max_h_;
-        int max_w_;
+        int off_origin_x;
+        int off_origin_y;
+        int max_h;
+        int max_w;
     } packing_params_;
+
+    struct{
+        std::function<int(Macro&)> get_x;
+        std::function<void(Macro&, int)> set_x;
+        std::function<int(int, int)> acc_x;
+        std::function<bool(int, int)> ahead_x;
+        std::function<int(int, int)> finish_x;
+
+        std::function<int(Macro&)> get_y;
+        std::function<void(Macro&, int)> set_y;
+        std::function<int(int, int)> acc_y;
+        std::function<bool(int, int)> ahead_y;
+        std::function<int(int, int)> finish_y;
+    } packing_ops_;
 
     int width_;
     int height_;

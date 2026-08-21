@@ -31,12 +31,13 @@ class SAplace{
         SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
         ~SAplace();
 
-        void init(int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height);
+        void init(int halo_width, int halo_height);
+        void run(int iterations_per_T, double initial_T, double alpha);
 
     private:
-        
+
         void initializeProxies();
-        void buildAdjacencyGraph();
+        AdjacencyMatrix buildAdjacencyGraph();
         //gets all the nets that have pins in this set of macros and also have pins in other macros;
         std::vector<Net*> findSharedNets(std::unordered_set<Macro*> macros);
         //gets all the nets that have pins in this set of macros and only in this set of macros;
@@ -54,6 +55,7 @@ class SAplace{
         std::vector<Pin> pins_;
 
         std::map<Net*,std::unordered_set<Macro*>> net_macros_;
+        AdjacencyMatrix adjacency_;
 
         std::vector<int> pos_seq_;
         std::vector<int> neg_seq_;
@@ -65,9 +67,6 @@ class SAplace{
         std::default_random_engine generator_;
         std::uniform_real_distribution<float> prob_;
         std::uniform_int_distribution<int> move_;
-
-        int width_;
-        int height_;
 
         int max_h_;
         int max_w_;

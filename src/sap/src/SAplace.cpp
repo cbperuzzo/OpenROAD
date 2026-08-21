@@ -8,6 +8,7 @@
 #include <limits>
 #include <unordered_set>
 #include <utility>
+#include <thread>
 
 namespace sap{
 
@@ -72,7 +73,7 @@ std::array<std::vector<int>, 2> SAplace::kernighanLinBisect(
   std::vector<int> side(n);
   for (int i = 0; i < n; i++) {
     // |A| <= |B| needs to be true
-    side[i] = i +1 % 2 ;
+    side[i] = (i + 1) % 2 ;
   }
 
   bool improved = true;
@@ -184,38 +185,99 @@ SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
   sta_ = sta;
   log_ = log;
   generator_ = std::default_random_engine(44);
-  prob_ = std::uniform_real_distribution<float>(0,1);
-  move_ = std::uniform_int_distribution<int>(0,1);
 
 }
 
 SAplace::~SAplace(){}
 
-void SAplace::init(int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height) {
+void SAplace::init(int halo_width, int halo_height) {
   macros_.clear();
   nets_.clear();
   pins_.clear();
 
-  max_h_ = db_->getChip()->getBlock()->getCoreArea().dx();
-  max_w_ = db_->getChip()->getBlock()->getCoreArea().dy();
+  max_w_ = db_->getChip()->getBlock()->getCoreArea().dx();
+  max_h_ = db_->getChip()->getBlock()->getCoreArea().dy();
 
   initializeProxies();
-  buildAdjacencyGraph();
+  adjacency_ = buildAdjacencyGraph();
 
   for(auto& macro : macros_)
     macro.applyHalo(halo_width, halo_height);
-  
+
   for(auto& net : nets_)
     net.updateStaticBBox();
-  
+
   pos_seq_.resize(macros_.size());
   neg_seq_.resize(macros_.size());
+}
 
-  for(auto& macro : macros_){
-    macro.updateInst();
-    macro.createHaloBlockage(db_->getChip()->getBlock());
+void SAplace::run(int iterations_per_T, double initial_T, double alpha){
+  std::array<Partition, 4> partitions = makePartitions(adjacency_);
+
+  std::vector<Annealing> annealers;
+  annealers.reserve(partitions.size());
+
+  for(auto& partition : partitions){
+    std::vector<Macro> partition_macros;
+    partition_macros.reserve(partition.macros.size());
+    for(Macro* macro : partition.macros){
+      partition_macros.push_back(*macro);
+    }
+
+    std::vector<Net> partition_nets;
+    partition_nets.reserve(partition.nets.size());
+    for(Net* net : partition.nets){
+      partition_nets.push_back(*net);
+    }
+
+    int origin_x = 0;
+    int origin_y = 0;
+    int offset_x = db_->getChip()->getBlock()->getCoreArea().xMin();
+    int offset_y = db_->getChip()->getBlock()->getCoreArea().yMin();
+    const bool anchor_left = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::UL;
+    const bool anchor_bottom = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::LR;
+    if(!anchor_left){
+      origin_x = max_w_;
+      offset_x = max_w_ - db_->getChip()->getBlock()->getCoreArea().xMax();
+    }
+    if(!anchor_bottom){
+      origin_y = max_h_;
+      offset_y = max_h_ - db_->getChip()->getBlock()->getCoreArea().yMax();
+    }
+    
+
+    std::default_random_engine partition_generator(generator_());
+
+    annealers.emplace_back(std::move(partition_macros),
+                            std::move(partition_nets),
+                            max_w_ / 2,
+                            max_h_ / 2,
+                            origin_x,
+                            origin_y,
+                            partition.corner,
+                            offset_x,
+                            offset_y,
+                            partition_generator,
+                            prob_,
+                            move_);
   }
-  
+
+  std::vector<std::thread> threads;
+  threads.reserve(annealers.size());
+  for(auto& annealer : annealers){
+    threads.emplace_back(&Annealing::run, &annealer, iterations_per_T, initial_T, alpha);
+  }
+  for(auto& thread : threads){
+    thread.join();
+  }
+
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  for(auto& annealer : annealers){
+    for(auto& macro : annealer.getMacros()){
+      macro.updateInst();
+      macro.createHaloBlockage(block);
+    }
+  }
 }
 
 void SAplace::initializeProxies(){
@@ -239,7 +301,9 @@ void SAplace::initializeProxies(){
       macro.addPin(&pins_.back());
       
       if (net_map.find(db_net->getId()) != net_map.end()){
-        net_map.at(db_net->getId())->addDynamicPin(&pins_.back());
+        Net* net = net_map.at(db_net->getId());
+        net->addDynamicPin(&pins_.back());
+        net_macros_[net].insert(&macro);
       }
       else{
         nets_.push_back(Net(db_net));
@@ -262,10 +326,9 @@ void SAplace::initializeProxies(){
 
 }
 
-void SAplace::buildAdjacencyGraph(){
+AdjacencyMatrix SAplace::buildAdjacencyGraph(){
   AdjacencyGraphBuilder builder(sta_, db_, log_);
-  AdjacencyMatrix matrix = builder.build(macros_);
-
+  return builder.build(macros_);
 }
 
 std::vector<Net*> SAplace::findSharedNets(std::unordered_set<Macro*> macros){

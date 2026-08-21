@@ -11,6 +11,8 @@
 #include "Macro.h"
 #include "Pin.h"
 #include "Annealing.h"
+#include "AdjacencyGraphBuilder.h"
+
 namespace sta {
 class dbSta;
 }
@@ -18,14 +20,14 @@ class dbSta;
 namespace sap{
 
 class SAplace{
-
-    typedef struct Partition {
-        std::vector<Macro*> macros;
-        std::vector<Net*> nets;
-        Annealing::Corner corner;
-    };
-
     public:
+
+        typedef struct Partition {
+            std::vector<Macro*> macros;
+            std::vector<Net*> nets;
+            Annealing::Corner corner;
+        };
+
         SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
         ~SAplace();
 
@@ -35,9 +37,13 @@ class SAplace{
         
         void initializeProxies();
         void buildAdjacencyGraph();
-        //gets all the nets have pins in this set of macros and also have pins in other macros;
-        std::vector<Net*> findSharedNets(std::unordered_set<Macro*>& macros);
-        std::array<Partition, 4> getPartitions();
+        //gets all the nets that have pins in this set of macros and also have pins in other macros;
+        std::vector<Net*> findSharedNets(std::unordered_set<Macro*> macros);
+        //gets all the nets that have pins in this set of macros and only in this set of macros;
+        std::vector<Net*>  findExclusivedNets(std::unordered_set<Macro*> macros);
+        std::array<Partition, 4> makePartitions(AdjacencyMatrix adj);
+        // Kernighan-Lin graph bisection over ids (positions in macro_)
+        std::array<std::vector<int>, 2> kernighanLinBisect(std::vector<int> ids, const AdjacencyMatrix& adj);
 
         odb::dbDatabase* db_;
         sta::dbSta* sta_;
@@ -47,7 +53,7 @@ class SAplace{
         std::vector<Net> nets_;
         std::vector<Pin> pins_;
 
-        std::map<Net*,std::unordered_set<Macro*>> shared_nets_;
+        std::map<Net*,std::unordered_set<Macro*>> net_macros_;
 
         std::vector<int> pos_seq_;
         std::vector<int> neg_seq_;
@@ -65,7 +71,6 @@ class SAplace{
 
         int max_h_;
         int max_w_;
-
 
 };
 

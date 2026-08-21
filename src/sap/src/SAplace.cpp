@@ -123,7 +123,8 @@ std::array<std::vector<int>, 2> SAplace::kernighanLinBisect(
       swaps.emplace_back(best_a, best_b);
       gains.push_back(best_gain);
       remaining -= 2;
-
+      
+      // recalculates values for d quickly
       for (int k = 0; k < n; k++) {
         if (locked[k]) {
           continue;
@@ -138,6 +139,8 @@ std::array<std::vector<int>, 2> SAplace::kernighanLinBisect(
       }
     }
 
+    // whats the ideal depth of swaps performed sequencially that 
+    // give the most gain
     int acc = 0;
     int max_acc = 0;
     int max_idx = -1;
@@ -148,11 +151,12 @@ std::array<std::vector<int>, 2> SAplace::kernighanLinBisect(
         max_idx = static_cast<int>(i);
       }
     }
-
+    // undoes the swaps outside the ideal depth
     for (size_t i = static_cast<size_t>(max_idx + 1); i < swaps.size(); i++) {
       side[swaps[i].first] = 0;
       side[swaps[i].second] = 1;
     }
+    // there was some improvement in this pass
     if (max_idx >= 0) {
       improved = true;
     }

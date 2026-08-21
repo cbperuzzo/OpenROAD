@@ -19,8 +19,14 @@ public:
     void xMin(int x);
     void yMin(int y);
 
+    void xMax(int x);
+    void yMax(int y);
+
     int xMin();
     int yMin();
+
+    int xMax();
+    int yMax();
 
     int dx();
     int dy();

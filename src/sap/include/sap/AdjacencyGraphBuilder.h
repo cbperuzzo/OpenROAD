@@ -1,6 +1,6 @@
 #pragma once
 
-#include <deque>
+#include <vector>
 #include <map>
 #include <set>
 #include <utility>
@@ -26,7 +26,7 @@ class AdjacencyGraphBuilder
                         odb::dbDatabase* db,
                         utl::Logger* logger);
 
-  AdjacencyMatrix build(std::deque<Macro>& macros);
+  AdjacencyMatrix build(std::vector<Macro>& macros);
 
  private:
   using MacroSet = std::set<Macro*>;
@@ -37,15 +37,15 @@ class AdjacencyGraphBuilder
   bool isMissingLiberty();
   void seedFaninBfs(sta::BfsFwdIterator& bfs,
                     VertexFaninMap& vertex_fanins,
-                    std::deque<Macro>& macros);
+                    std::vector<Macro>& macros);
   void findFanins(sta::BfsFwdIterator& bfs, VertexFaninMap& vertex_fanins);
   void copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs,
                                  VertexFaninMap& vertex_fanins);
   sta::Pin* findSeqOutPin(sta::Instance* inst, sta::LibertyPort* out_port);
   void findAdjWeights(VertexFaninMap& vertex_fanins,
                       AdjWeightMap& adj_map,
-                      std::deque<Macro>& macros);
-  AdjacencyMatrix fillMatrix(AdjWeightMap& adj_map, std::deque<Macro>& macros);
+                      std::vector<Macro>& macros);
+  AdjacencyMatrix fillMatrix(AdjWeightMap& adj_map, std::vector<Macro>& macros);
 
   sta::dbSta* sta_;
   odb::dbDatabase* db_;

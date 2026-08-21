@@ -58,10 +58,10 @@ void Net::updateStaticBBox(){
     s_ux_ = INT_MIN;
     s_uy_ = INT_MIN;
     for (auto pin : static_pins_) {
-        lx_ = std::min(pin->xMin(), lx_);
-        ly_ = std::min(pin->yMin(), ly_);
-        ux_ = std::max(pin->xMin() + pin->dx(), ux_);
-        uy_ = std::max(pin->yMin() + pin->dy(), uy_);
+        s_lx_ = std::min(pin->xMin(), s_lx_);
+        s_ly_ = std::min(pin->yMin(), s_ly_);
+        s_ux_ = std::max(pin->xMin() + pin->dx(), s_ux_);
+        s_uy_ = std::max(pin->yMin() + pin->dy(), s_uy_);
     }
 }
 

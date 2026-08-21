@@ -21,6 +21,7 @@ target_sources(sap
   PRIVATE
     src/MakeSAplace.cpp
     src/SAplace.cpp
+    src/Annealing.cpp
     src/Net.cpp
     src/Macro.cpp
     src/Pin.cpp

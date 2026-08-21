@@ -64,11 +64,35 @@ void Macro::yMin(int y){
     }
 }
 
+void Macro::xMax(int x){
+    int d = x - dx_ - xMin_;
+    xMin_ = x - dx_;
+
+    for(auto pin : pins_){
+        pin->xMove(d);
+    }
+}
+void Macro::yMax(int y){
+    int d = y - dy_ - yMin_;
+    yMin_ = y - dy_;
+
+    for(auto pin : pins_){
+        pin->yMove(d);
+    }
+}
+
 int Macro::xMin(){
     return xMin_;
 }
 int Macro::yMin(){
     return yMin_;
+}
+
+int Macro::xMax(){
+    return xMin_ + dx_;
+}
+int Macro::yMax(){
+    return yMin_ + dy_;
 }
 
 int Macro::dx(){

@@ -5,8 +5,169 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include <map>
+#include <limits>
+#include <unordered_set>
+#include <utility>
+#include <thread>
 
 namespace sap{
+
+int edgeWeight(const AdjacencyMatrix& adj, int gi, int gj)
+{
+  if (gi == gj) {
+    return 0;
+  }
+  // simetric "matrix", but the actual value is only stored at [a][b] where a < b
+  // a = b doesnt metter/is always 0 anyways
+  auto key = gi < gj ? std::make_pair(gi, gj) : std::make_pair(gj, gi);
+  auto it = adj.find(key);
+  return it == adj.end() ? 0 : it->second;
+}
+
+std::vector<int> computeD(const std::vector<int>& ids,
+                                   const std::vector<int>& side,
+                                   const AdjacencyMatrix& adj)
+{
+  const int n = static_cast<int>(ids.size());
+  std::vector<int> d(n, 0);
+  for (int i = 0; i < n; i++) {
+    int internal = 0;
+    int external = 0;
+    for (int j = 0; j < n; j++) {
+      if (i == j) {
+        continue;
+      }
+      // only considers ids passed, reather then all related cells in adj
+      // thats disered behaviour
+      int w = edgeWeight(adj, ids[i], ids[j]);
+      if (w == 0) {
+        continue;
+      }
+      if (side[j] == side[i]) {
+        internal += w;
+      } else {
+        external += w;
+      }
+    }
+    d[i] = external - internal;
+  }
+  return d;
+}
+
+std::array<std::vector<int>, 2> SAplace::kernighanLinBisect(
+    std::vector<int> ids,
+    const AdjacencyMatrix& adj)
+{
+  const int n = static_cast<int>(ids.size());
+  std::array<std::vector<int>, 2> result;
+
+  if (n == 0) {
+    return result;
+  }
+  if (n == 1) {
+    result[0].push_back(ids[0]);
+    return result;
+  }
+
+  // side A, first or 0 | side B second or 1
+  std::vector<int> side(n);
+  for (int i = 0; i < n; i++) {
+    // |A| <= |B| needs to be true
+    side[i] = (i + 1) % 2 ;
+  }
+
+  bool improved = true;
+  while (improved) {
+    improved = false;
+
+    std::vector<int> d = computeD(ids, side, adj);
+
+    std::vector<bool> locked(n, false);
+    // side A, first or 0 | side B second or 1
+    std::vector<std::pair<int, int>> swaps;
+    std::vector<int> gains;
+
+    int remaining = n;
+    while (remaining > 0) {
+      int best_a = -1;
+      int best_b = -1;
+      // the best gain can be negative sometimes
+      int best_gain = std::numeric_limits<int>::min();
+      for (int a = 0; a < n; a++) {
+        if (locked[a] || side[a] != 0) {
+          continue;
+        }
+        for (int b = 0; b < n; b++) {
+          if (locked[b] || side[b] != 1) {
+            continue;
+          }
+          int gain = d[a] + d[b] - 2 * edgeWeight(adj, ids[a], ids[b]);
+          if (gain > best_gain) {
+            best_gain = gain;
+            best_a = a;
+            best_b = b;
+          }
+        }
+      }
+      if (best_a == -1) {
+        break;
+      }
+
+      // performs swap
+      side[best_a] = 1;
+      side[best_b] = 0;
+      // marked as locked for this pass
+      locked[best_a] = true;
+      locked[best_b] = true;
+
+      // stores the swaps performed
+      swaps.emplace_back(best_a, best_b);
+      gains.push_back(best_gain);
+      remaining -= 2;
+      
+      // recalculates values for d quickly
+      for (int k = 0; k < n; k++) {
+        if (locked[k]) {
+          continue;
+        }
+        int w_ak = edgeWeight(adj, ids[k], ids[best_a]);
+        int w_bk = edgeWeight(adj, ids[k], ids[best_b]);
+        if (side[k] == 0) {
+          d[k] += 2 * w_ak - 2 * w_bk;
+        } else {
+          d[k] += 2 * w_bk - 2 * w_ak;
+        }
+      }
+    }
+
+    // whats the ideal depth of swaps performed sequencially that 
+    // give the most gain
+    int acc = 0;
+    int max_acc = 0;
+    int max_idx = -1;
+    for (size_t i = 0; i < gains.size(); i++) {
+      acc += gains[i];
+      if (acc > max_acc) {
+        max_acc = acc;
+        max_idx = static_cast<int>(i);
+      }
+    }
+    // undoes the swaps outside the ideal depth
+    for (size_t i = static_cast<size_t>(max_idx + 1); i < swaps.size(); i++) {
+      side[swaps[i].first] = 0;
+      side[swaps[i].second] = 1;
+    }
+    // there was some improvement in this pass
+    if (max_idx >= 0) {
+      improved = true;
+    }
+  }
+
+  for (int i = 0; i < n; i++) {
+    result[side[i]].push_back(ids[i]);
+  }
+  return result;
+}
 
 SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
   pos_seq_(),
@@ -24,184 +185,99 @@ SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
   sta_ = sta;
   log_ = log;
   generator_ = std::default_random_engine(44);
-  prob_ = std::uniform_real_distribution<float>(0,1);
-  move_ = std::uniform_int_distribution<int>(0,1);
 
 }
 
-SAplace::~SAplace(){
+SAplace::~SAplace(){}
 
-}
-
-void SAplace::simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height) {
+void SAplace::init(int halo_width, int halo_height) {
   macros_.clear();
   nets_.clear();
   pins_.clear();
 
-  max_h_ = db_->getChip()->getBlock()->getCoreArea().dx();
-  max_w_ = db_->getChip()->getBlock()->getCoreArea().dy();
+  max_w_ = db_->getChip()->getBlock()->getCoreArea().dx();
+  max_h_ = db_->getChip()->getBlock()->getCoreArea().dy();
 
   initializeProxies();
-  buildAdjacencyGraph();
+  adjacency_ = buildAdjacencyGraph();
 
   for(auto& macro : macros_)
     macro.applyHalo(halo_width, halo_height);
-  
+
   for(auto& net : nets_)
     net.updateStaticBBox();
-  
+
   pos_seq_.resize(macros_.size());
   neg_seq_.resize(macros_.size());
-
-  // random placement
-  std::iota(pos_seq_.begin(),pos_seq_.end(),0);
-  std::iota(neg_seq_.begin(),neg_seq_.end(),0);
-
-  std::shuffle(pos_seq_.begin(),pos_seq_.end(),generator_);
-  std::shuffle(neg_seq_.begin(),neg_seq_.end(),generator_);
-
-  int core_origin_x = db_->getChip()->getBlock()->getCoreArea().xMin();
-  int core_origin_y = db_->getChip()->getBlock()->getCoreArea().yMin();
-  
-  pack(core_origin_x, core_origin_y);
-  float cost = calcCost();
-  float best_cost = cost;
-  best_pos_seq_ = pos_seq_;
-  best_neg_seq_ = neg_seq_;
-  float temperature = initial_T;
-  int t_iterations = 0;
-  while(temperature >= 1) {
-    for(int iteration = 0; iteration < iterations_per_T; iteration++){
-
-      saveState();
-      perturb();
-      pack(core_origin_x, core_origin_y);
-
-      float new_cost = calcCost();
-      float delta = new_cost - cost;
-      
-      if (delta <= 0){
-        cost = new_cost;
-        if(new_cost < best_cost){
-          best_cost = new_cost;
-          best_pos_seq_ = pos_seq_;
-          best_neg_seq_ = neg_seq_;
-        }
-      }
-      // migth accept, event though cost incressed
-      else{
-        float accept_chance = std::exp(-delta / temperature);
-        float num = prob_(generator_);
-        bool accepted = num < accept_chance;
-        if (accepted){
-          cost = new_cost;
-        }
-        else{
-          restoreState();
-        }
-      }
-      
-    }
-    temperature *= alpha;
-    log_->report("it: {} cost: {}",t_iterations ,calcCost());
-    t_iterations++;
-  }
-
-  pos_seq_ = best_pos_seq_;
-  neg_seq_ = best_neg_seq_;
-
-  pack(core_origin_x, core_origin_y);
-
-  for(auto& macro : macros_){
-    macro.updateInst();
-    macro.createHaloBlockage(db_->getChip()->getBlock());
-  }
-  
-  log_->report("-------------------------");
-  log_->report("best cost (lowest): {} ",calcCost());
-  log_->report("Finished simulated annealing");
-  log_->report("-------------------------");
-
 }
 
-void SAplace::pack(int offset_x, int offset_y){
-  
-  std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
+void SAplace::run(int iterations_per_T, double initial_T, double alpha){
+  std::array<Partition, 4> partitions = makePartitions(adjacency_);
 
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    sequence_pair_pos[pos_seq_[i]].first = i;
-    sequence_pair_pos[neg_seq_[i]].second = i;
-  }
+  std::vector<Annealing> annealers;
+  annealers.reserve(partitions.size());
 
-  std::vector<int> accumulated_length(pos_seq_.size(), offset_x);
-  for (int macro_id : pos_seq_) {
-    const int neg_seq_pos = sequence_pair_pos[macro_id].second;
-
-    Macro& macro = macros_[macro_id];
-    int x = macro.xMin();
-
-    if (!macro.isFixed()) {
-      x = accumulated_length[neg_seq_pos];
-      macro.xMin(x);
+  for(auto& partition : partitions){
+    std::vector<Macro> partition_macros;
+    partition_macros.reserve(partition.macros.size());
+    for(Macro* macro : partition.macros){
+      partition_macros.push_back(*macro);
     }
 
-    const int current_length = x + macro.dx();
-  
-    for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
-      if (current_length > accumulated_length[j]) {
-        accumulated_length[j] = current_length;
-      } else {
-        break;
-      }
-    }
-  }
-
-  width_ = accumulated_length[pos_seq_.size() - 1];
-
-  // calulate Y position
-  std::vector<int> reversed_pos_seq(pos_seq_.size());
-  for (int i = 0; i < reversed_pos_seq.size(); i++) {
-    reversed_pos_seq[i] = pos_seq_[reversed_pos_seq.size() - 1 - i];
-  }
-
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    sequence_pair_pos[reversed_pos_seq[i]].first = i;
-    sequence_pair_pos[neg_seq_[i]].second = i;
-
-    // This is actually the accumulated height, but we use the same vector
-    // to avoid more allocation.
-    accumulated_length[i] = offset_y;
-  }
-
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    const int macro_id = reversed_pos_seq[i];
-    const int neg_seq_pos = sequence_pair_pos[macro_id].second;
-
-    Macro& macro = macros_[macro_id];
-    int y = macro.yMin();
-
-    if (!macro.isFixed()) {
-      y = accumulated_length[neg_seq_pos];
-      macro.yMin(y);
+    std::vector<Net> partition_nets;
+    partition_nets.reserve(partition.nets.size());
+    for(Net* net : partition.nets){
+      partition_nets.push_back(*net);
     }
 
-    const int current_height = y + macro.dy();
+    int origin_x = 0;
+    int origin_y = 0;
+    int offset_x = db_->getChip()->getBlock()->getCoreArea().xMin();
+    int offset_y = db_->getChip()->getBlock()->getCoreArea().yMin();
+    const bool anchor_left = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::UL;
+    const bool anchor_bottom = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::LR;
+    if(!anchor_left){
+      origin_x = max_w_;
+      offset_x = max_w_ - db_->getChip()->getBlock()->getCoreArea().xMax();
+    }
+    if(!anchor_bottom){
+      origin_y = max_h_;
+      offset_y = max_h_ - db_->getChip()->getBlock()->getCoreArea().yMax();
+    }
+    
 
-    for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
-      if (current_height > accumulated_length[j]) {
-        accumulated_length[j] = current_height;
-      } else {
-        break;
-      }
+    std::default_random_engine partition_generator(generator_());
+
+    annealers.emplace_back(std::move(partition_macros),
+                            std::move(partition_nets),
+                            max_w_ / 2,
+                            max_h_ / 2,
+                            origin_x,
+                            origin_y,
+                            partition.corner,
+                            offset_x,
+                            offset_y,
+                            partition_generator,
+                            prob_,
+                            move_);
+  }
+
+  std::vector<std::thread> threads;
+  threads.reserve(annealers.size());
+  for(auto& annealer : annealers){
+    threads.emplace_back(&Annealing::run, &annealer, iterations_per_T, initial_T, alpha);
+  }
+  for(auto& thread : threads){
+    thread.join();
+  }
+
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  for(auto& annealer : annealers){
+    for(auto& macro : annealer.getMacros()){
+      macro.updateInst();
+      macro.createHaloBlockage(block);
     }
   }
-
-  height_ = accumulated_length[pos_seq_.size() - 1];
-
-  for (auto& net : nets_){
-    net.update();
-  }
-  
 }
 
 void SAplace::initializeProxies(){
@@ -210,7 +286,7 @@ void SAplace::initializeProxies(){
       macros_.push_back(Macro(inst));
   }
 
-  std::map<uint32_t,Net*> net_map;  
+  std::map<uint32_t,Net*> net_map;
   
   for(auto& macro : macros_ ){
     for(auto i : macro.listITerms()){
@@ -225,12 +301,15 @@ void SAplace::initializeProxies(){
       macro.addPin(&pins_.back());
       
       if (net_map.find(db_net->getId()) != net_map.end()){
-        net_map.at(db_net->getId())->addDynamicPin(&pins_.back());
+        Net* net = net_map.at(db_net->getId());
+        net->addDynamicPin(&pins_.back());
+        net_macros_[net].insert(&macro);
       }
       else{
         nets_.push_back(Net(db_net));
         nets_.back().addDynamicPin(&pins_.back());
         net_map[db_net->getId()] = &nets_.back();
+        net_macros_[&nets_.back()].insert(&macro);
       }
     }
   }
@@ -247,126 +326,81 @@ void SAplace::initializeProxies(){
 
 }
 
-void SAplace::buildAdjacencyGraph(){
+AdjacencyMatrix SAplace::buildAdjacencyGraph(){
   AdjacencyGraphBuilder builder(sta_, db_, log_);
-  AdjacencyMatrix matrix = builder.build(macros_);
+  return builder.build(macros_);
+}
 
-  log_->report("-------------------------");
-  log_->report("Macro adjacency matrix ({} macros)", macros_.size());
-  for (size_t i = 0; i < macros_.size(); i++) {
-    std::string row;
-    for (size_t j = 0; j < macros_.size(); j++) {
-      auto key = i < j ? std::make_pair((int) i, (int) j)
-                        : std::make_pair((int) j, (int) i);
-      auto it = matrix.find(key);
-      row += std::to_string(it != matrix.end() ? it->second : 0);
-      if (j + 1 < macros_.size()) {
-        row += " ";
+std::vector<Net*> SAplace::findSharedNets(std::unordered_set<Macro*> macros){
+  std::vector<Net*> out_nets;
+  for(auto& pair : net_macros_ ){
+    if(pair.second.size() <= 1){
+      continue;
+    }
+    bool touches_set = false;
+    bool touches_outside = false;
+    for(Macro* net_macro : pair.second){
+      if(macros.contains(net_macro)){
+        touches_set = true;
+      } else {
+        touches_outside = true;
       }
     }
-    log_->report("{}: {}", macros_[i].getInst()->getConstName(), row);
+    if(touches_set && touches_outside){
+      out_nets.push_back(pair.first);
+    }
   }
-  log_->report("-------------------------");
+  return out_nets;
 }
 
-void SAplace::saveState(){
-  pos_seq_backup_ = pos_seq_;
-  neg_seq_backup_ = neg_seq_;
-}
-
-void SAplace::restoreState(){
-  pos_seq_ = pos_seq_backup_;
-  neg_seq_ = neg_seq_backup_;
-}
-
-float SAplace::calcCost(){  
-  return (float) hpwl() +  penalties();
-}
-
-float SAplace::penalties(){
-  float penalty = 0.0;
-  
-  if(height_ >= max_h_){
-    penalty += 1e+7; 
+std::vector<Net*> SAplace::findExclusivedNets(std::unordered_set<Macro*> macros){
+  std::vector<Net*> ex_nets;
+  for(auto& pair : net_macros_ ){
+    bool touches_set = false;
+    bool touches_outside = false;
+    for(Macro* net_macro : pair.second){
+      if(macros.contains(net_macro)){
+        touches_set = true;
+      } else {
+        touches_outside = true;
+      }
+    }
+    if(touches_set && !touches_outside){
+      ex_nets.push_back(pair.first);
+    }
   }
-  
-  if(width_ >= max_w_){
-    penalty += 1e+7;
-  }
-
-  return penalty;
+  return ex_nets;
 }
 
+std::array<SAplace::Partition, 4> SAplace::makePartitions(AdjacencyMatrix adj){
+  std::array<Partition, 4> partitions;
 
-int SAplace::hpwl(){
-  
-  int acumulated_hpwl = 0;
-
-  for (auto net: nets_)
-    acumulated_hpwl += net.getHpwl();
-  
-  return acumulated_hpwl;
-  
-}
-
-void SAplace::perturb(){
-  int m = move_(generator_);
-  int seq = move_(generator_);
-
-  std::vector<int>* chosen = &pos_seq_;
-
-  if (seq == 0){
-    chosen = &neg_seq_;
-  }
-  
-
-  if (m == 0){
-    int index1, index2;
-    generateRandomIndices(index1,index2);
-    int temp_index1_content = (*chosen)[index1];
-    (*chosen)[index1] = (*chosen)[index2];
-    (*chosen)[index2] = temp_index1_content;
+  std::vector<int> all_ids(macros_.size());
+  for(size_t i = 0; i < macros_.size(); i++){
+    all_ids[i] = static_cast<int>(i);
   }
 
-  else if(pos_seq_.size() >= 3){
-    int index1, index2, index3;
-    generateRandomIndices(index1,index2,index3);
-    int temp_index1_content = (*chosen)[index1];
-    (*chosen)[index1] = (*chosen)[index2];
-    (*chosen)[index2] = (*chosen)[index3];
-    (*chosen)[index3] = temp_index1_content;
-  }
-  
-}
+  auto halves = kernighanLinBisect(std::move(all_ids), adj);
+  auto quadrants_a = kernighanLinBisect(halves[0], adj);
+  auto quadrants_b = kernighanLinBisect(halves[1], adj);
 
-void SAplace::generateRandomIndices(int& index1, int& index2)
-{
+  std::array<std::vector<int>, 4> groups
+      = {quadrants_a[0], quadrants_a[1], quadrants_b[0], quadrants_b[1]};
+  static constexpr std::array<Annealing::Corner, 4> corners
+      = {Annealing::LL, Annealing::UL, Annealing::LR, Annealing::UR};
 
-  index1 =  rand() % pos_seq_.size();
-  index2 = rand() % pos_seq_.size();
-
-  while (index1 == index2) {
-    index2 = rand() % pos_seq_.size();
-  }
-}
-
-void SAplace::generateRandomIndices(int& index1, int& index2,int& index3)
-{
-
-  index1 =  rand() % pos_seq_.size();
-  index2 = rand() % pos_seq_.size();
-
-  while (index1 == index2) {
-    index2 = rand() % pos_seq_.size();
+  for(int i = 0; i < 4; i++){
+    std::unordered_set<Macro*> macro_set;
+    for(int idx : groups[i]){
+      Macro* macro = &macros_[idx];
+      partitions[i].macros.push_back(macro);
+      macro_set.insert(macro);
+    }
+    partitions[i].nets = findExclusivedNets(macro_set);
+    partitions[i].corner = corners[i];
   }
 
-  index3 = rand() % pos_seq_.size();
-
-  while (index3 == index1 || index3 == index2){
-    index3 = rand() % pos_seq_.size();
-  }
-
+  return partitions;
 }
 
 }
-

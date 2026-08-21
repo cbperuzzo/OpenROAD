@@ -5,10 +5,13 @@
 #include <vector>
 #include <random>
 #include <deque>
+#include <array>
 
 #include "Net.h"
 #include "Macro.h"
 #include "Pin.h"
+#include "Annealing.h"
+#include "AdjacencyGraphBuilder.h"
 
 namespace sta {
 class dbSta;
@@ -18,31 +21,41 @@ namespace sap{
 
 class SAplace{
     public:
+
+        typedef struct Partition {
+            std::vector<Macro*> macros;
+            std::vector<Net*> nets;
+            Annealing::Corner corner;
+        };
+
         SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
         ~SAplace();
 
-        void simulatedAnnealing(int n_threads, int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height);
+        void init(int halo_width, int halo_height);
+        void run(int iterations_per_T, double initial_T, double alpha);
 
     private:
-        int hpwl();
-        void perturb();
-        float calcCost();
-        float penalties();
-        void pack(int offset_x, int offset_y);
-        void saveState();
-        void restoreState();
-        void generateRandomIndices(int& index1, int& index2);
-        void generateRandomIndices(int& index1, int& index2,int& index3);
+
         void initializeProxies();
-        void buildAdjacencyGraph();
+        AdjacencyMatrix buildAdjacencyGraph();
+        //gets all the nets that have pins in this set of macros and also have pins in other macros;
+        std::vector<Net*> findSharedNets(std::unordered_set<Macro*> macros);
+        //gets all the nets that have pins in this set of macros and only in this set of macros;
+        std::vector<Net*>  findExclusivedNets(std::unordered_set<Macro*> macros);
+        std::array<Partition, 4> makePartitions(AdjacencyMatrix adj);
+        // Kernighan-Lin graph bisection over ids (positions in macro_)
+        std::array<std::vector<int>, 2> kernighanLinBisect(std::vector<int> ids, const AdjacencyMatrix& adj);
 
         odb::dbDatabase* db_;
         sta::dbSta* sta_;
         utl::Logger* log_;
 
-        std::deque<Macro> macros_;
+        std::vector<Macro> macros_;
         std::deque<Net> nets_;
         std::deque<Pin> pins_;
+
+        std::map<Net*,std::unordered_set<Macro*>> net_macros_;
+        AdjacencyMatrix adjacency_;
 
         std::vector<int> pos_seq_;
         std::vector<int> neg_seq_;
@@ -55,12 +68,8 @@ class SAplace{
         std::uniform_real_distribution<float> prob_;
         std::uniform_int_distribution<int> move_;
 
-        int width_;
-        int height_;
-
         int max_h_;
         int max_w_;
-
 
 };
 

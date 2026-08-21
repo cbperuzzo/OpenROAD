@@ -51,8 +51,8 @@ class SAplace{
         utl::Logger* log_;
 
         std::vector<Macro> macros_;
-        std::vector<Net> nets_;
-        std::vector<Pin> pins_;
+        std::deque<Net> nets_;
+        std::deque<Pin> pins_;
 
         std::map<Net*,std::unordered_set<Macro*>> net_macros_;
         AdjacencyMatrix adjacency_;

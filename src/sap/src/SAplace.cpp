@@ -185,7 +185,8 @@ SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
   sta_ = sta;
   log_ = log;
   generator_ = std::default_random_engine(44);
-
+  prob_ = std::uniform_real_distribution<float>(0.0f, 1.0f);
+  move_ = std::uniform_int_distribution<int>(0, 1);
 }
 
 SAplace::~SAplace(){}
@@ -263,7 +264,8 @@ void SAplace::run(int iterations_per_T, double initial_T, double alpha){
                             offset_y,
                             partition_generator,
                             prob_,
-                            move_);
+                            move_,
+                            log_);
   }
 
   std::vector<std::thread> threads;

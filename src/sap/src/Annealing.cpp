@@ -15,7 +15,8 @@ Annealing::Annealing(
   int offset_y,
   std::default_random_engine& generator,
   std::uniform_real_distribution<float>& prob,
-  std::uniform_int_distribution<int>& move
+  std::uniform_int_distribution<int>& move,
+  utl::Logger* log
 ){
   macros_ = macros;
   nets_ = nets;
@@ -27,6 +28,10 @@ Annealing::Annealing(
   generator_ = generator;
   prob_ = prob;
   move_ = move;
+
+  log_ = log;
+
+  packing_params_.corner = corner;
 
   const bool anchor_left = corner == LL || corner == UL;
   const bool anchor_bottom = corner == LL || corner == LR;
@@ -65,6 +70,21 @@ Annealing::Annealing(
 
 Annealing::~Annealing(){};
 
+std::string Annealing::toString(Corner corner)
+{
+  switch (corner) {
+    case LL:
+      return "LL";
+    case UL:
+      return "UL";
+    case LR:
+      return "LR";
+    case UR:
+      return "UR";
+  }
+  return "";
+}
+
 void Annealing::run(int iterations_per_T, double initial_T, double alpha){
 
   pos_seq_.resize(macros_.size());
@@ -85,10 +105,11 @@ void Annealing::run(int iterations_per_T, double initial_T, double alpha){
   float temperature = initial_T;
   int t_iterations = 0;
   while(temperature >= 1) {
+    log_->report("[{}] - temperature: {}", toString(packing_params_.corner), temperature);
     for(int iteration = 0; iteration < iterations_per_T; iteration++){
 
       saveState();
-      perturb();
+      perturb(temperature);
       pack();
 
       float new_cost = calcCost();
@@ -225,11 +246,13 @@ float Annealing::penalties(){
   
   int y_error = packing_params_.max_h - height_;
   if(y_error >= 0){
+    log_->report("[{}] - y boundry violation, error: {}", toString(packing_params_.corner), y_error);
     penalty += 1e+9 + (BOUNDRY_PENALITY_FACTOR * y_error); 
   }
 
   int x_error = packing_params_.max_w - width_;
   if(x_error >= 0){
+    log_->report("[{}] - x boundry violation, error: {}", toString(packing_params_.corner), x_error);
     penalty += 1e+9 + (BOUNDRY_PENALITY_FACTOR * x_error);
   }
 
@@ -248,8 +271,9 @@ int Annealing::hpwl(){
   
 }
 
-void Annealing::perturb(){
-  int m = move_(generator_);
+void Annealing::perturb(float temp){
+  int m;
+  temp > 100 ? m = move_(generator_) : m == 0 ;
   int seq = move_(generator_);
 
   std::vector<int>* chosen = &pos_seq_;

@@ -4,6 +4,7 @@
 #include <random>
 #include <deque>
 #include <functional>
+#include <string>
 
 #include "Net.h"
 #include "Macro.h"
@@ -15,6 +16,8 @@ class Annealing{
 public:
 
     enum Corner {LL,UL,LR,UR};
+
+    static std::string toString(Corner corner);
 
     Annealing(
         std::vector<Macro> macros,
@@ -29,7 +32,8 @@ public:
         int offset_y,
         std::default_random_engine& generator,
         std::uniform_real_distribution<float>& prob,
-        std::uniform_int_distribution<int>& move
+        std::uniform_int_distribution<int>& move,
+        utl::Logger* log
     );
     ~Annealing();
 
@@ -42,7 +46,7 @@ public:
 private:
         
     int hpwl();
-    void perturb();
+    void perturb(float temp);
     float calcCost();
     float penalties();
     void pack();
@@ -72,6 +76,7 @@ private:
         int off_origin_y;
         int max_h;
         int max_w;
+        Corner corner;
     } packing_params_;
 
     struct{
@@ -91,7 +96,7 @@ private:
     int width_;
     int height_;
 
-
+    utl::Logger* log_;
 };
 
 }

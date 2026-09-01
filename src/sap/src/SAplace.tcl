@@ -3,11 +3,13 @@ namespace eval sap {
         {
             [-iterations_per_T iterations] [-initial_T temperature] [-alpha alpha]
             [-halo_width halo_width] [-halo_height halo_height]
+            [-worst_hpwl]
         }
 
     proc ::saplace_simulated_annealing {args} {
         sta::parse_key_args "saplace_simulated_annealing" args keys \
-            {-iterations_per_T -initial_T -alpha -halo_width -halo_height }
+            {-iterations_per_T -initial_T -alpha -halo_width -halo_height} \
+            flags {-worst_hpwl}
 
         set iterations_per_T 400
         if { [info exists keys(-iterations_per_T)] } {
@@ -41,6 +43,9 @@ namespace eval sap {
             sta::check_positive_integer "-halo_size" $halo_height
         }
 
-        sap::saplace_simulated_annealing_simple_cmd $iterations_per_T $initial_T $alpha $halo_width $halo_height
+        set worst_hpwl [info exists flags(-worst_hpwl)]
+
+        sap::saplace_simulated_annealing_simple_cmd $iterations_per_T $initial_T $alpha \
+            $halo_width $halo_height $worst_hpwl
     }
 }

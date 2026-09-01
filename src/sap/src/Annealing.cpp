@@ -16,6 +16,7 @@ Annealing::Annealing(
   std::default_random_engine& generator,
   std::uniform_real_distribution<float>& prob,
   std::uniform_int_distribution<int>& move,
+  bool worst_hpwl,
   utl::Logger* log
 ){
   macros_ = macros;
@@ -24,10 +25,12 @@ Annealing::Annealing(
   packing_params_.max_w = max_w;
   packing_params_.origin_x = origin_x;
   packing_params_.origin_y = orign_y;
-  
+
   generator_ = generator;
   prob_ = prob;
   move_ = move;
+
+  worst_hpwl_ = worst_hpwl;
 
   log_ = log;
 
@@ -237,8 +240,12 @@ void Annealing::restoreState(){
   neg_seq_ = neg_seq_backup_;
 }
 
-float Annealing::calcCost(){  
-  return (float) hpwl() +  penalties();
+float Annealing::calcCost(){
+  float hpwl_cost = (float) hpwl();
+  if (worst_hpwl_) {
+    hpwl_cost = -hpwl_cost;
+  }
+  return hpwl_cost + penalties();
 }
 
 float Annealing::penalties(){

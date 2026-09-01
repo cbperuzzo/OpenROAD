@@ -32,7 +32,7 @@ class SAplace{
         ~SAplace();
 
         void init(int halo_width, int halo_height);
-        void run(int iterations_per_T, double initial_T, double alpha);
+        void run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl = false);
 
     private:
 

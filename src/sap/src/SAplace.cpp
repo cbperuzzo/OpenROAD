@@ -212,7 +212,7 @@ void SAplace::init(int halo_width, int halo_height) {
   neg_seq_.resize(macros_.size());
 }
 
-void SAplace::run(int iterations_per_T, double initial_T, double alpha){
+void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl){
   std::array<Partition, 4> partitions = makePartitions(adjacency_);
 
   std::vector<Annealing> annealers;
@@ -265,6 +265,7 @@ void SAplace::run(int iterations_per_T, double initial_T, double alpha){
                             partition_generator,
                             prob_,
                             move_,
+                            worst_hpwl,
                             log_);
   }
 

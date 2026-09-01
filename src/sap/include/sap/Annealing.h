@@ -33,6 +33,7 @@ public:
         std::default_random_engine& generator,
         std::uniform_real_distribution<float>& prob,
         std::uniform_int_distribution<int>& move,
+        bool worst_hpwl,
         utl::Logger* log
     );
     ~Annealing();
@@ -68,6 +69,7 @@ private:
     std::default_random_engine generator_;
     std::uniform_real_distribution<float> prob_;
     std::uniform_int_distribution<int> move_;
+    bool worst_hpwl_;
 
     struct{
         int origin_x;

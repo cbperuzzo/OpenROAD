@@ -21,11 +21,11 @@ using sap::SAplace;
 
 
 void
-saplace_simulated_annealing_simple_cmd(int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height)
+saplace_simulated_annealing_simple_cmd(int iterations_per_T, double initial_T, double alpha, int halo_width, int halo_height, bool worst_hpwl)
 {
   SAplace* saplace = getSAplace();
   saplace->init(halo_width, halo_height);
-  saplace->run(iterations_per_T, initial_T, alpha);
+  saplace->run(iterations_per_T, initial_T, alpha, worst_hpwl);
 }
 
 

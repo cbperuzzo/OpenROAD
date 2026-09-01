@@ -218,6 +218,10 @@ void SAplace::run(int iterations_per_T, double initial_T, double alpha){
   annealers.reserve(partitions.size());
 
   for(auto& partition : partitions){
+    if(partition.macros.empty()){
+      continue;
+    }
+
     std::vector<Macro> partition_macros;
     partition_macros.reserve(partition.macros.size());
     for(Macro* macro : partition.macros){

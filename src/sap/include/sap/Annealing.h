@@ -33,6 +33,8 @@ public:
     );
     ~Annealing();
 
+    const float BOUNDRY_PENALITY_FACTOR = 3.5e+2;
+
     void run(int iterations_per_T, double initial_T, double alpha);
 
     std::vector<Macro> getMacros() { return macros_; }

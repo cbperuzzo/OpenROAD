@@ -223,12 +223,14 @@ float Annealing::calcCost(){
 float Annealing::penalties(){
   float penalty = 0.0;
   
-  if(height_ >= packing_params_.max_h){
-    penalty += 1e+7; 
+  int y_error = packing_params_.max_h - height_;
+  if(y_error >= 0){
+    penalty += 1e+9 + (BOUNDRY_PENALITY_FACTOR * y_error); 
   }
-  
-  if(width_ >= packing_params_.max_w){
-    penalty += 1e+7;
+
+  int x_error = packing_params_.max_w - width_;
+  if(x_error >= 0){
+    penalty += 1e+9 + (BOUNDRY_PENALITY_FACTOR * x_error);
   }
 
   return penalty;

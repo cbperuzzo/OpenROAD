@@ -251,16 +251,16 @@ float Annealing::calcCost(){
 float Annealing::penalties(){
   float penalty = 0.0;
   
-  int y_error = packing_params_.max_h - height_;
-  if(y_error >= 0){
+  int y_error = height_ - packing_params_.max_h;
+  if(y_error > 0){
     log_->report("[{}] - y boundry violation, error: {}", toString(packing_params_.corner), y_error);
-    penalty += 1e+9 + (BOUNDRY_PENALITY_FACTOR * y_error); 
+    penalty += 1e+11 + (BOUNDRY_PENALITY_FACTOR * y_error);
   }
 
-  int x_error = packing_params_.max_w - width_;
-  if(x_error >= 0){
+  int x_error = width_ - packing_params_.max_w;
+  if(x_error > 0){
     log_->report("[{}] - x boundry violation, error: {}", toString(packing_params_.corner), x_error);
-    penalty += 1e+9 + (BOUNDRY_PENALITY_FACTOR * x_error);
+    penalty += 1e+11 + (BOUNDRY_PENALITY_FACTOR * x_error);
   }
 
   return penalty;

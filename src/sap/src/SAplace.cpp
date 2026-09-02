@@ -170,14 +170,14 @@ std::array<std::vector<int>, 2> SAplace::kernighanLinBisect(
 }
 
 SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
+  macros_(),
+  nets_(),
   pos_seq_(),
   neg_seq_(),
   pos_seq_backup_(),
   neg_seq_backup_(),
   best_pos_seq_(),
   best_neg_seq_(),
-  macros_(),
-  nets_(),
   max_h_(0),
   max_w_(0)
 {

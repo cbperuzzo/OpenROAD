@@ -4,10 +4,10 @@ namespace sap {
 
 Macro::Macro(odb::dbInst* inst) :
     inst_(inst),
-    dx_(inst->getBBox()->getDX()),
-    dy_(inst->getBBox()->getDY()),
     xMin_(inst->getBBox()->xMin()),
     yMin_(inst->getBBox()->yMin()),
+    dx_(inst->getBBox()->getDX()),
+    dy_(inst->getBBox()->getDY()),
     dx_to_macro(0),
     dy_to_macro(0)
 {

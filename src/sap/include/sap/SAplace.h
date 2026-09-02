@@ -22,7 +22,7 @@ namespace sap{
 class SAplace{
     public:
 
-        typedef struct Partition {
+        struct Partition {
             std::vector<Macro*> macros;
             std::vector<Net*> nets;
             Annealing::Corner corner;

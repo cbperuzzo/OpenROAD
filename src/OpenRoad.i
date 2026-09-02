@@ -126,6 +126,12 @@ getMacroPlacer()
   return openroad->getMacroPlacer();
 }
 
+sap::SAplace *
+getSAplace(){
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getSAplace();
+}
+
 gpl::Replace*
 getReplace()
 {

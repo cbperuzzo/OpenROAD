@@ -75,6 +75,7 @@ class Progress;
   X(RCX)                \
   X(RMP)                \
   X(RSZ)                \
+  X(SAP)                \
   X(STA)                \
   X(STT)                \
   X(SYN)                \

@@ -290,21 +290,20 @@ void Annealing::perturb(float temp){
   }
   
 
-  if (m == 0){
-    int index1, index2;
-    generateRandomIndices(index1,index2);
-    int temp_index1_content = (*chosen)[index1];
-    (*chosen)[index1] = (*chosen)[index2];
-    (*chosen)[index2] = temp_index1_content;
-  }
-
-  else if(pos_seq_.size() >= 3){
+  if (m == 1 && pos_seq_.size() >=3){
     int index1, index2, index3;
     generateRandomIndices(index1,index2,index3);
     int temp_index1_content = (*chosen)[index1];
     (*chosen)[index1] = (*chosen)[index2];
     (*chosen)[index2] = (*chosen)[index3];
     (*chosen)[index3] = temp_index1_content;
+  }
+  else if(pos_seq_.size() >= 2){
+    int index1, index2;
+    generateRandomIndices(index1,index2);
+    int temp_index1_content = (*chosen)[index1];
+    (*chosen)[index1] = (*chosen)[index2];
+    (*chosen)[index2] = temp_index1_content;
   }
   
 }

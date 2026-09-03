@@ -117,6 +117,13 @@ void Macro::updateInst(){
     inst_->setOrigin(xMin_ + dx_to_macro, yMin_ + dy_to_macro);
     inst_->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 
+    // Row cutting (tapcell/cut_rows) only looks at macro instances and their
+    // odb halos, a standalone dbBlockage is invisible to it. Without the halo
+    // here the rows are only cut around the bare macro and the tap/endcap
+    // cells placed inside the halo land on pixels dpl marks as invalid.
+    if (dx_to_macro > 0 || dy_to_macro > 0) {
+        inst_->setHalo(dx_to_macro, dy_to_macro, dx_to_macro, dy_to_macro, false);
+    }
 }
 
 void Macro::updateInstWithOffset(int dx, int dy){
@@ -125,7 +132,7 @@ void Macro::updateInstWithOffset(int dx, int dy){
 }
 
 void Macro::createHaloBlockage(odb::dbBlock* chip_block){
-    odb::dbBlockage::create(chip_block, xMin_, yMin_, xMin_ + dx_, yMin_ + dy_);
+    odb::dbBlockage::create(chip_block, xMin_, yMin_, xMin_ + dx_, yMin_ + dy_, inst_);
 }
 
 }

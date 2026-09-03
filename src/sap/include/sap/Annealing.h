@@ -30,6 +30,8 @@ public:
         Corner corner,
         int offset_x,
         int offset_y,
+        int site_width,
+        int row_height,
         std::default_random_engine& generator,
         std::uniform_real_distribution<float>& prob,
         std::uniform_int_distribution<int>& move,
@@ -78,6 +80,8 @@ private:
         int off_origin_y;
         int max_h;
         int max_w;
+        int site_width;
+        int row_height;
         Corner corner;
     } packing_params_;
 
@@ -87,12 +91,18 @@ private:
         std::function<int(int, int)> acc_x;
         std::function<bool(int, int)> ahead_x;
         std::function<int(int, int)> finish_x;
+        // Snaps a computed slot edge to the nearest legal site-grid
+        // multiple, moving further away from already-packed macros
+        // (up for anchor_left, down for anchor_right) so it never
+        // encroaches on space already claimed.
+        std::function<int(int, int)> snap_x;
 
         std::function<int(Macro&)> get_y;
         std::function<void(Macro&, int)> set_y;
         std::function<int(int, int)> acc_y;
         std::function<bool(int, int)> ahead_y;
         std::function<int(int, int)> finish_y;
+        std::function<int(int, int)> snap_y;
     } packing_ops_;
 
     int width_;

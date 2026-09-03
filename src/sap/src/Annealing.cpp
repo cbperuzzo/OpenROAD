@@ -3,6 +3,26 @@
 namespace sap
 {
 
+namespace {
+
+int roundUpToMultiple(int value, int step)
+{
+  if (step <= 1) {
+    return value;
+  }
+  return ((value + step - 1) / step) * step;
+}
+
+int roundDownToMultiple(int value, int step)
+{
+  if (step <= 1) {
+    return value;
+  }
+  return (value / step) * step;
+}
+
+}  // namespace
+
 Annealing::Annealing(
   std::vector<Macro> macros,
   std::vector<Net> nets,
@@ -13,6 +33,8 @@ Annealing::Annealing(
   Corner corner,
   int offset_x,
   int offset_y,
+  int site_width,
+  int row_height,
   std::default_random_engine& generator,
   std::uniform_real_distribution<float>& prob,
   std::uniform_int_distribution<int>& move,
@@ -25,6 +47,8 @@ Annealing::Annealing(
   packing_params_.max_w = max_w;
   packing_params_.origin_x = origin_x;
   packing_params_.origin_y = orign_y;
+  packing_params_.site_width = site_width;
+  packing_params_.row_height = row_height;
 
   generator_ = generator;
   prob_ = prob;
@@ -48,12 +72,14 @@ Annealing::Annealing(
     packing_ops_.acc_x = [](int x, int dx) { return x + dx; };
     packing_ops_.ahead_x = std::greater<int>();
     packing_ops_.finish_x = [](int /* origin_x */, int acc) { return acc; };
+    packing_ops_.snap_x = roundUpToMultiple;
   } else {
     packing_ops_.get_x = [](Macro& m) { return m.xMax(); };
     packing_ops_.set_x = [](Macro& m, int x) { m.xMax(x); };
     packing_ops_.acc_x = [](int x, int dx) { return x - dx; };
     packing_ops_.ahead_x = std::less<int>();
     packing_ops_.finish_x = [](int origin_x, int acc) { return origin_x - acc; };
+    packing_ops_.snap_x = roundDownToMultiple;
   }
 
   if (anchor_bottom) {
@@ -62,12 +88,14 @@ Annealing::Annealing(
     packing_ops_.acc_y = [](int y, int dy) { return y + dy; };
     packing_ops_.ahead_y = std::greater<int>();
     packing_ops_.finish_y = [](int /* origin_y */, int acc) { return acc; };
+    packing_ops_.snap_y = roundUpToMultiple;
   } else {
     packing_ops_.get_y = [](Macro& m) { return m.yMax(); };
     packing_ops_.set_y = [](Macro& m, int y) { m.yMax(y); };
     packing_ops_.acc_y = [](int y, int dy) { return y - dy; };
     packing_ops_.ahead_y = std::less<int>();
     packing_ops_.finish_y = [](int origin_y, int acc) { return origin_y - acc; };
+    packing_ops_.snap_y = roundDownToMultiple;
   }
 }
 
@@ -167,11 +195,12 @@ void Annealing::pack(){
     int x = packing_ops_.get_x(macro);
 
     if (!macro.isFixed()) {
-      x = accumulated_length[neg_seq_pos];
+      x = packing_ops_.snap_x(accumulated_length[neg_seq_pos], packing_params_.site_width);
       packing_ops_.set_x(macro, x);
     }
 
-    const int current_length = packing_ops_.acc_x(x, macro.dx());
+    const int reserved_dx = packing_ops_.snap_x(macro.dx(), packing_params_.site_width);
+    const int current_length = packing_ops_.acc_x(x, reserved_dx);
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (packing_ops_.ahead_x(current_length,accumulated_length[j])) {
@@ -207,11 +236,12 @@ void Annealing::pack(){
     int y = packing_ops_.get_y(macro);
 
     if (!macro.isFixed()) {
-      y = accumulated_length[neg_seq_pos];
+      y = packing_ops_.snap_y(accumulated_length[neg_seq_pos], packing_params_.row_height);
       packing_ops_.set_y(macro, y);
     }
 
-    const int current_height =  packing_ops_.acc_y(y, macro.dy());
+    const int reserved_dy = packing_ops_.snap_y(macro.dy(), packing_params_.row_height);
+    const int current_height =  packing_ops_.acc_y(y, reserved_dy);
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (packing_ops_.ahead_y(current_height, accumulated_length[j])) {

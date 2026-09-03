@@ -4,6 +4,7 @@
 #include "sta/StaMain.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include <algorithm>
 #include <map>
 #include <limits>
 #include <unordered_set>
@@ -179,7 +180,9 @@ SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
   best_pos_seq_(),
   best_neg_seq_(),
   max_h_(0),
-  max_w_(0)
+  max_w_(0),
+  site_width_(0),
+  row_height_(0)
 {
   db_ = db;
   sta_ = sta;
@@ -198,6 +201,19 @@ void SAplace::init(int halo_width, int halo_height) {
 
   max_w_ = db_->getChip()->getBlock()->getCoreArea().dx();
   max_h_ = db_->getChip()->getBlock()->getCoreArea().dy();
+
+  site_width_ = std::numeric_limits<int>::max();
+  row_height_ = std::numeric_limits<int>::max();
+  for (auto row : db_->getChip()->getBlock()->getRows()) {
+    odb::dbSite* site = row->getSite();
+    site_width_ = std::min(site_width_, site->getWidth());
+    row_height_ = std::min(row_height_, site->getHeight());
+  }
+  if (site_width_ == std::numeric_limits<int>::max()) {
+    log_->report("no rows found, macro placement will not be site/row aligned");
+    site_width_ = 1;
+    row_height_ = 1;
+  }
 
   initializeProxies();
   adjacency_ = buildAdjacencyGraph();
@@ -262,6 +278,8 @@ void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool wor
                             partition.corner,
                             offset_x,
                             offset_y,
+                            site_width_,
+                            row_height_,
                             partition_generator,
                             prob_,
                             move_,

@@ -70,6 +70,8 @@ class SAplace{
 
         int max_h_;
         int max_w_;
+        int site_width_;
+        int row_height_;
 
 };
 

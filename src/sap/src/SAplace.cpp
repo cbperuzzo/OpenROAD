@@ -194,7 +194,7 @@ SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
 
 SAplace::~SAplace(){}
 
-void SAplace::init(int halo_width, int halo_height, float boundry_const, float boundry_coef) {
+void SAplace::init(int halo_width, int halo_height, double boundry_const, double boundry_coef) {
   macros_.clear();
   nets_.clear();
   pins_.clear();

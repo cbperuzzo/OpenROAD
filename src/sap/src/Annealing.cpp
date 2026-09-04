@@ -271,7 +271,7 @@ void Annealing::restoreState(){
 }
 
 double Annealing::calcCost(){
-  double hpwl_cost = (float) hpwl();
+  double hpwl_cost = (double) hpwl();
   if (worst_hpwl_) {
     hpwl_cost = -hpwl_cost;
   }

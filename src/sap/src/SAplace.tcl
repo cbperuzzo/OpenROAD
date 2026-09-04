@@ -2,13 +2,14 @@ namespace eval sap {
     sta::define_cmd_args "saplace_simulated_annealing" \
         {
             [-iterations_per_T iterations] [-initial_T temperature] [-alpha alpha]
-            [-halo_width halo_width] [-halo_height halo_height] [-boundry-const] [-boundry-coef]
+            [-halo_width halo_width] [-halo_height halo_height]
+            [-boundry_const boundry_const] [-boundry_coef boundry_coef]
             [-worst_hpwl]
         }
 
     proc ::saplace_simulated_annealing {args} {
         sta::parse_key_args "saplace_simulated_annealing" args keys \
-            {-iterations_per_T -initial_T -alpha -halo_width -halo_height -boundry-const -boundry-coef} \
+            {-iterations_per_T -initial_T -alpha -halo_width -halo_height -boundry_const -boundry_coef} \
             flags {-worst_hpwl}
 
         set iterations_per_T 400
@@ -44,13 +45,15 @@ namespace eval sap {
         }
 
         set boundry_const 1e+15
-        if { [info exists keys(-boundry-const)] } {
-            set boundry_const $keys(-boundry-const)
+        if { [info exists keys(-boundry_const)] } {
+            set boundry_const $keys(-boundry_const)
+            sta::check_positive_float "-boundry_const" $boundry_const
         }
 
-        set boundry_coef 1e+15
-        if { [info exists keys(-boundry-coef)] } {
-            set boundry_coef $keys(-boundry-coef)
+        set boundry_coef 3.5e+2
+        if { [info exists keys(-boundry_coef)] } {
+            set boundry_coef $keys(-boundry_coef)
+            sta::check_positive_float "-boundry_coef" $boundry_coef
         }
 
         set worst_hpwl [info exists flags(-worst_hpwl)]

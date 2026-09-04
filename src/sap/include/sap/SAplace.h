@@ -31,7 +31,7 @@ class SAplace{
         SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
         ~SAplace();
 
-        void init(int halo_width, int halo_height);
+        void init(int halo_width, int halo_height, float boundy_const, float boundry_coef);
         void run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl = false);
 
     private:

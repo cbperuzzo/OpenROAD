@@ -194,7 +194,7 @@ SAplace::SAplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log):
 
 SAplace::~SAplace(){}
 
-void SAplace::init(int halo_width, int halo_height) {
+void SAplace::init(int halo_width, int halo_height, float boundry_const, float boundry_coef) {
   macros_.clear();
   nets_.clear();
   pins_.clear();
@@ -226,6 +226,9 @@ void SAplace::init(int halo_width, int halo_height) {
 
   pos_seq_.resize(macros_.size());
   neg_seq_.resize(macros_.size());
+
+  Annealing::boundry_coef = boundry_coef;
+  Annealing::boundry_const = boundry_const;
 }
 
 void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl){

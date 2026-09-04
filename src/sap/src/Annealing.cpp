@@ -284,13 +284,13 @@ float Annealing::penalties(){
   int y_error = height_ - packing_params_.max_h;
   if(y_error > 0){
     log_->report("[{}] - y boundry violation, error: {}", toString(packing_params_.corner), y_error);
-    penalty += 1e+11 + (BOUNDRY_PENALITY_FACTOR * y_error);
+    penalty += boundry_const + (boundry_coef * y_error);
   }
 
   int x_error = width_ - packing_params_.max_w;
   if(x_error > 0){
     log_->report("[{}] - x boundry violation, error: {}", toString(packing_params_.corner), x_error);
-    penalty += 1e+11 + (BOUNDRY_PENALITY_FACTOR * x_error);
+    penalty += boundry_const + (boundry_coef * x_error);
   }
 
   return penalty;

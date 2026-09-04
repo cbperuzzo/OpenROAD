@@ -40,7 +40,7 @@ public:
     );
     ~Annealing();
 
-    inline static double boundry_const = 1e+7;
+    inline static double boundry_const = 1e+11;
     inline static double boundry_coef = 3.5e+2;
 
     void run(int iterations_per_T, double initial_T, double alpha);

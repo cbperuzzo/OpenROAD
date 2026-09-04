@@ -137,6 +137,7 @@ void Annealing::run(int iterations_per_T, double initial_T, double alpha){
   int t_iterations = 0;
   while(temperature >= 1) {
     log_->report("[{}] - temperature: {}", toString(packing_params_.corner), temperature);
+    log_->report("[{}] - cost: {}", toString(packing_params_.corner), calcCost());
     for(int iteration = 0; iteration < iterations_per_T; iteration++){
 
       saveState();

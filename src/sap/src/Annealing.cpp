@@ -129,8 +129,8 @@ void Annealing::run(int iterations_per_T, double initial_T, double alpha){
   std::shuffle(neg_seq_.begin(),neg_seq_.end(),generator_);
   
   pack();
-  float cost = calcCost();
-  float best_cost = cost;
+  double cost = calcCost();
+  double best_cost = cost;
   best_pos_seq_ = pos_seq_;
   best_neg_seq_ = neg_seq_;
   float temperature = initial_T;
@@ -143,8 +143,8 @@ void Annealing::run(int iterations_per_T, double initial_T, double alpha){
       perturb(temperature);
       pack();
 
-      float new_cost = calcCost();
-      float delta = new_cost - cost;
+      double new_cost = calcCost();
+      double delta = new_cost - cost;
       
       if (delta <= 0){
         cost = new_cost;
@@ -270,16 +270,16 @@ void Annealing::restoreState(){
   neg_seq_ = neg_seq_backup_;
 }
 
-float Annealing::calcCost(){
-  float hpwl_cost = (float) hpwl();
+double Annealing::calcCost(){
+  double hpwl_cost = (float) hpwl();
   if (worst_hpwl_) {
     hpwl_cost = -hpwl_cost;
   }
   return hpwl_cost + penalties();
 }
 
-float Annealing::penalties(){
-  float penalty = 0.0;
+double Annealing::penalties(){
+  double penalty = 0.0;
   
   int y_error = height_ - packing_params_.max_h;
   if(y_error > 0){

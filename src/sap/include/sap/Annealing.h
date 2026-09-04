@@ -51,8 +51,8 @@ private:
         
     int hpwl();
     void perturb(float temp);
-    float calcCost();
-    float penalties();
+    double calcCost();
+    double penalties();
     void pack();
     void saveState();
     void restoreState();

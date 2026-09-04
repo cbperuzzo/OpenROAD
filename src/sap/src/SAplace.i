@@ -23,7 +23,7 @@ using sap::SAplace;
 void
 saplace_simulated_annealing_simple_cmd(
   int iterations_per_T, double initial_T, double alpha, int halo_width,
-  int halo_height, float boundry_const, float boundry_coef, float bool worst_hpwl
+  int halo_height, double boundry_const, double boundry_coef, float bool worst_hpwl
 )
 {
   SAplace* saplace = getSAplace();

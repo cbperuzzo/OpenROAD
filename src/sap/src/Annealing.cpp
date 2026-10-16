@@ -283,7 +283,6 @@ double Annealing::calcCost(){
   if (worst_hpwl_) {
     hpwl_cost = -hpwl_cost;
   }
-  // the corner pull is a placement guide, so it is never negated by worst_hpwl
   return hpwl_cost + cornerCost() + penalties();
 }
 

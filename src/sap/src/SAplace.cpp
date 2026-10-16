@@ -248,8 +248,6 @@ void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool wor
     const bool anchor_left = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::UL;
     const bool anchor_bottom = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::LR;
 
-    // fake nets pulling each macro (from its center) to the partition corner,
-    // must be created before the macros are copied so the copies share the pin
     const int corner_x = anchor_left ? core.xMin() : core.xMax();
     const int corner_y = anchor_bottom ? core.yMin() : core.yMax();
     std::vector<Net> partition_corner_nets;

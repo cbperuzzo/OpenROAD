@@ -8,6 +8,8 @@ class Pin{
 
 public:
     Pin(odb::dbITerm* i_term);
+    // fake zero-size pin, not backed by any iterm
+    Pin(int x, int y);
 
     int xMin();
     int yMin();

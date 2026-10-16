@@ -32,7 +32,7 @@ class SAplace{
         ~SAplace();
 
         void init(int halo_width, int halo_height, double boundry_const, double boundry_coef);
-        void run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl = false);
+        void run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl = false, double corner_weight = 1.0);
 
     private:
 
@@ -53,6 +53,8 @@ class SAplace{
         std::vector<Macro> macros_;
         std::deque<Net> nets_;
         std::deque<Pin> pins_;
+        // one fake net per macro, connecting it to its partition corner
+        std::deque<Net> corner_nets_;
 
         std::map<Net*,std::unordered_set<Macro*>> net_macros_;
         AdjacencyMatrix adjacency_;

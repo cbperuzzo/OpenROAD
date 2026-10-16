@@ -28,6 +28,14 @@ int Net::getHpwl(){
     return (ux_ - lx_) + (uy_ - ly_);
 }
 
+void Net::setWeight(double weight){
+    weight_ = weight;
+}
+
+double Net::getWeight(){
+    return weight_;
+}
+
 bool Net::operator==( Net& other) const{
     return (net_ == other.net_);
 }

@@ -22,6 +22,8 @@ public:
     Annealing(
         std::vector<Macro> macros,
         std::vector<Net> nets,
+        // fake macro-to-corner nets, their weighted hpwl pulls macros to the corner
+        std::vector<Net> corner_nets,
         int max_w,
         int max_h,
         int origin_x,
@@ -50,6 +52,7 @@ public:
 private:
         
     int hpwl();
+    double cornerCost();
     void perturb(float temp);
     double calcCost();
     double penalties();
@@ -61,6 +64,7 @@ private:
         
     std::vector<Macro> macros_;
     std::vector<Net> nets_;
+    std::vector<Net> corner_nets_;
 
     std::vector<int> pos_seq_;
     std::vector<int> neg_seq_;

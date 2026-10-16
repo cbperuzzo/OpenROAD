@@ -26,6 +26,7 @@ int roundDownToMultiple(int value, int step)
 Annealing::Annealing(
   std::vector<Macro> macros,
   std::vector<Net> nets,
+  std::vector<Net> corner_nets,
   int max_w,
   int max_h,
   int origin_x,
@@ -43,6 +44,7 @@ Annealing::Annealing(
 ){
   macros_ = macros;
   nets_ = nets;
+  corner_nets_ = corner_nets;
   packing_params_.max_h = max_h;
   packing_params_.max_w = max_w;
   packing_params_.origin_x = origin_x;
@@ -138,6 +140,7 @@ void Annealing::run(int iterations_per_T, double initial_T, double alpha){
   while(temperature >= 1) {
     log_->report("[{}] - temperature: {}", toString(packing_params_.corner), temperature);
     log_->report("[{}] - cost: {}", toString(packing_params_.corner), calcCost());
+    log_->report("[{}] - corner cost: {}", toString(packing_params_.corner), cornerCost());
     for(int iteration = 0; iteration < iterations_per_T; iteration++){
 
       saveState();
@@ -259,6 +262,10 @@ void Annealing::pack(){
     net.update();
   }
 
+  for (auto& net : corner_nets_){
+    net.update();
+  }
+
 }
 
 void Annealing::saveState(){
@@ -276,7 +283,15 @@ double Annealing::calcCost(){
   if (worst_hpwl_) {
     hpwl_cost = -hpwl_cost;
   }
-  return hpwl_cost + penalties();
+  // the corner pull is a placement guide, so it is never negated by worst_hpwl
+  return hpwl_cost + cornerCost() + penalties();
+}
+
+double Annealing::cornerCost(){
+  double cost = 0.0;
+  for (auto& net : corner_nets_)
+    cost += net.getWeight() * net.getHpwl();
+  return cost;
 }
 
 double Annealing::penalties(){

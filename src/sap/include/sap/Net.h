@@ -16,6 +16,9 @@ public:
     void update();
     int getHpwl();
 
+    void setWeight(double weight);
+    double getWeight();
+
     bool operator==( Net& other) const;
 
     void addDynamicPin(Pin* pin);
@@ -35,6 +38,7 @@ private:
     std::vector<Pin*> static_pins_;
     std::vector<Pin*> dynamic_pins_;
     odb::dbNet* net_;
+    double weight_ = 1.0;
     int lx_;
     int ux_;
     int ly_;

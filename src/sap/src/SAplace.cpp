@@ -198,6 +198,7 @@ void SAplace::init(int halo_width, int halo_height, double boundry_const, double
   macros_.clear();
   nets_.clear();
   pins_.clear();
+  corner_nets_.clear();
 
   max_w_ = db_->getChip()->getBlock()->getCoreArea().dx();
   max_h_ = db_->getChip()->getBlock()->getCoreArea().dy();
@@ -231,15 +232,43 @@ void SAplace::init(int halo_width, int halo_height, double boundry_const, double
   Annealing::boundry_const = boundry_const;
 }
 
-void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl){
+void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool worst_hpwl, double corner_weight){
   std::array<Partition, 4> partitions = makePartitions(adjacency_);
 
   std::vector<Annealing> annealers;
   annealers.reserve(partitions.size());
 
+  const odb::Rect core = db_->getChip()->getBlock()->getCoreArea();
+
   for(auto& partition : partitions){
     if(partition.macros.empty()){
       continue;
+    }
+
+    const bool anchor_left = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::UL;
+    const bool anchor_bottom = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::LR;
+
+    // fake nets pulling each macro (from its center) to the partition corner,
+    // must be created before the macros are copied so the copies share the pin
+    const int corner_x = anchor_left ? core.xMin() : core.xMax();
+    const int corner_y = anchor_bottom ? core.yMin() : core.yMax();
+    std::vector<Net> partition_corner_nets;
+    partition_corner_nets.reserve(partition.macros.size());
+    for(Macro* macro : partition.macros){
+      pins_.emplace_back(macro->cx(), macro->cy());
+      Pin* macro_pin = &pins_.back();
+      macro->addPin(macro_pin);
+
+      pins_.emplace_back(corner_x, corner_y);
+      Pin* corner_pin = &pins_.back();
+
+      corner_nets_.emplace_back(nullptr);
+      Net& corner_net = corner_nets_.back();
+      corner_net.addDynamicPin(macro_pin);
+      corner_net.addStaticPin(corner_pin);
+      corner_net.setWeight(corner_weight);
+      corner_net.updateStaticBBox();
+      partition_corner_nets.push_back(corner_net);
     }
 
     std::vector<Macro> partition_macros;
@@ -258,8 +287,6 @@ void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool wor
     int origin_y = 0;
     int offset_x = db_->getChip()->getBlock()->getCoreArea().xMin();
     int offset_y = db_->getChip()->getBlock()->getCoreArea().yMin();
-    const bool anchor_left = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::UL;
-    const bool anchor_bottom = partition.corner == Annealing::Corner::LL || partition.corner == Annealing::Corner::LR;
     if(!anchor_left){
       origin_x = max_w_;
       offset_x = max_w_ - db_->getChip()->getBlock()->getCoreArea().xMax();
@@ -274,6 +301,7 @@ void SAplace::run(int iterations_per_T, double initial_T, double alpha, bool wor
 
     annealers.emplace_back(std::move(partition_macros),
                             std::move(partition_nets),
+                            std::move(partition_corner_nets),
                             max_w_ / 2,
                             max_h_ / 2,
                             origin_x,

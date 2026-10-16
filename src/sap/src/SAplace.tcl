@@ -4,12 +4,13 @@ namespace eval sap {
             [-iterations_per_T iterations] [-initial_T temperature] [-alpha alpha]
             [-halo_width halo_width] [-halo_height halo_height]
             [-boundry_const boundry_const] [-boundry_coef boundry_coef]
+            [-corner_weight corner_weight]
             [-worst_hpwl]
         }
 
     proc ::saplace_simulated_annealing {args} {
         sta::parse_key_args "saplace_simulated_annealing" args keys \
-            {-iterations_per_T -initial_T -alpha -halo_width -halo_height -boundry_const -boundry_coef} \
+            {-iterations_per_T -initial_T -alpha -halo_width -halo_height -boundry_const -boundry_coef -corner_weight} \
             flags {-worst_hpwl}
 
         set iterations_per_T 400
@@ -56,9 +57,16 @@ namespace eval sap {
             sta::check_positive_float "-boundry_coef" $boundry_coef
         }
 
+        # weight of the fake macro-to-corner nets hpwl in the cost function
+        set corner_weight 1.0
+        if { [info exists keys(-corner_weight)] } {
+            set corner_weight $keys(-corner_weight)
+            sta::check_positive_float "-corner_weight" $corner_weight
+        }
+
         set worst_hpwl [info exists flags(-worst_hpwl)]
 
         sap::saplace_simulated_annealing_simple_cmd $iterations_per_T $initial_T $alpha \
-            $halo_width $halo_height $boundry_const $boundry_coef $worst_hpwl
+            $halo_width $halo_height $boundry_const $boundry_coef $worst_hpwl $corner_weight
     }
 }

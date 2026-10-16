@@ -23,12 +23,13 @@ using sap::SAplace;
 void
 saplace_simulated_annealing_simple_cmd(
   int iterations_per_T, double initial_T, double alpha, int halo_width,
-  int halo_height, double boundry_const, double boundry_coef, bool worst_hpwl
+  int halo_height, double boundry_const, double boundry_coef, bool worst_hpwl,
+  double corner_weight
 )
 {
   SAplace* saplace = getSAplace();
   saplace->init(halo_width, halo_height, boundry_const, boundry_coef);
-  saplace->run(iterations_per_T, initial_T, alpha, worst_hpwl);
+  saplace->run(iterations_per_T, initial_T, alpha, worst_hpwl, corner_weight);
 }
 
 

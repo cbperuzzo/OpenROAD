@@ -13,6 +13,14 @@ Pin::Pin(odb::dbITerm* i_term){
     dy_ = box.dy();
 }
 
+Pin::Pin(int x, int y){
+    i_term_ = nullptr;
+    xMin_ = x;
+    yMin_ = y;
+    dx_ = 0;
+    dy_ = 0;
+}
+
     int Pin::xMin(){
         return xMin_;
     }
